@@ -54,52 +54,301 @@
 
   h1,h2,h3{margin:0;font-family:var(--font-display);}
 
-  .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-soft);font-weight:700;}
+  .eyebrow{
+    font-size:11px;
+    letter-spacing:.22em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    font-weight:700;
+  }
+
   .site-title{text-align:center;margin-bottom:18px;}
-  .site-title h1{font-size:clamp(26px,5vw,38px);font-weight:800;letter-spacing:.02em;text-transform:uppercase;}
+  .site-title h1{
+    font-size:clamp(26px,5vw,38px);
+    font-weight:800;
+    letter-spacing:.02em;
+    text-transform:uppercase;
+  }
   .site-title h1 span{color:var(--p1-deep);}
   .site-title h1 em{font-style:normal;color:var(--p2-deep);}
   .site-title p{margin-top:4px;color:var(--ink-soft);font-size:13px;letter-spacing:.03em;}
 
   .layout{
-    width:100%;max-width:820px;display:grid;
+    width:100%;
+    max-width:820px;
+    display:grid;
     grid-template-columns:180px minmax(280px,360px) 180px;
-    grid-template-areas:"p1card center p2card";gap:18px;align-items:start;justify-content:center;
+    grid-template-areas:"p1card center p2card";
+    gap:18px;
+    align-items:start;
+    justify-content:center;
   }
   .player-card.p1{grid-area:p1card;}
   .player-card.p2{grid-area:p2card;}
-  .center-col{grid-area:center;display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;}
+  .center-col{grid-area:center;}
 
-  .panel{background:var(--surface);border:1px solid var(--surface-edge);border-radius:var(--radius-lg);box-shadow:var(--shadow);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);position:relative;}
-  
-  .player-card{padding:16px 14px;text-align:center;}
-  .player-card .symbol-badge{width:34px;height:34px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;}
-  .player-nick{font-weight:700;font-size:15px;min-height:20px;}
+  @media (max-width:740px){
+    .layout{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "center center"
+        "p1card p2card";
+      gap:12px;
+      max-width:420px;
+    }
+    .player-card{width:100%;padding:12px 10px;}
+    .player-card .symbol-badge{width:26px;height:26px;margin-bottom:5px;}
+    .player-nick{font-size:13px;min-height:16px;}
+    .player-role{font-size:9px;}
+    .score-block{margin-top:8px;padding-top:8px;}
+    .score-value{font-size:26px;}
+    .active-badge{font-size:9px;padding:3px 7px;margin-top:6px;}
+  }
+  @media (max-width:400px){
+    body{padding:14px 10px 24px;}
+    .site-title{margin-bottom:12px;}
+    .board-wrap{padding:12px;}
+  }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--surface-edge);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
+    position:relative;
+  }
+
+  /* ---------- PLAYER CARDS ---------- */
+  .player-card{
+    padding:16px 14px;
+    text-align:center;
+    transition:box-shadow .25s ease, transform .25s ease, border-color .25s ease;
+  }
+  .player-card .symbol-badge{
+    width:34px;height:34px;
+    margin:0 auto 8px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .player-nick{font-weight:700;font-size:15px;letter-spacing:.02em;word-break:break-word;min-height:20px;}
   .player-role{margin-top:2px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint);}
   .score-block{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);}
-  .score-value{font-family:var(--font-num);font-weight:700;font-size:34px;margin-top:2px;}
-  .player-card.active{border-color:var(--p1-glow);box-shadow:0 0 0 3px var(--p1-glow), var(--shadow);transform:translateY(-2px);}
-  .active-badge{display:none;margin-top:10px;font-size:10px;padding:4px 8px;border-radius:20px;}
-  .player-card.active .active-badge{display:inline-block;background:var(--p1-glow);}
+  .score-label{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);}
+  .score-value{font-family:var(--font-num);font-weight:700;font-size:34px;line-height:1.1;margin-top:2px;}
+  .player-card.p1 .score-value{color:var(--p1-deep);}
+  .player-card.p2 .score-value{color:var(--p2-deep);}
 
+  .player-card.active.p1{border-color:var(--p1-glow);box-shadow:0 0 0 3px var(--p1-glow), var(--shadow);transform:translateY(-2px);}
+  .player-card.active.p2{border-color:var(--p2-glow);box-shadow:0 0 0 3px var(--p2-glow), var(--shadow);transform:translateY(-2px);}
+  .active-badge{
+    display:none;margin-top:10px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    font-weight:800;padding:4px 8px;border-radius:20px;color:var(--ink);
+  }
+  .player-card.active .active-badge{display:inline-block;}
+  .player-card.p1.active .active-badge{background:var(--p1-glow);}
+  .player-card.p2.active .active-badge{background:var(--p2-glow);}
+
+  /* ---------- CENTER ---------- */
+  .center-col{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;}
+
+  .turn-banner{
+    width:100%;padding:10px 14px;text-align:center;font-weight:800;letter-spacing:.03em;
+    font-size:14px;text-transform:uppercase;transition:background .3s ease, color .3s ease;
+  }
+  .turn-banner.p1{background:linear-gradient(90deg, var(--p1-glow), transparent 120%);color:var(--p1-deep);}
+  .turn-banner.p2{background:linear-gradient(90deg, var(--p2-glow), transparent 120%);color:var(--p2-deep);}
+  .turn-banner.flash b{animation:turn-flash .32s ease;display:inline-block;}
+  @keyframes turn-flash{
+    0%{opacity:0;transform:translateY(-5px);}
+    100%{opacity:1;transform:translateY(0);}
+  }
+
+  /* ---------- BOARD (lucite tray) ---------- */
   .board-wrap{padding:18px;position:relative;}
-  .board{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);width:min(320px,84vw);aspect-ratio:1/1;gap:8px;background:rgba(255,255,255,0.35);border-radius:var(--radius-md);padding:10px;}
-  
-  .cell{background:rgba(255,255,255,0.35);border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
-  .cell.fading svg{animation:gentle-pulse 1.2s ease-in-out infinite;}
-  @keyframes gentle-pulse {0%, 100% { opacity: 0.9; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.9); }}
-  
-  .cell.pop-in svg{animation:pop-in .32s cubic-bezier(.34,1.56,.64,1);}
-  @keyframes pop-in{0%{transform:scale(0.25);opacity:0;}65%{transform:scale(1.14);opacity:1;}100%{transform:scale(1);opacity:1;}}
-  
-  .cell.vanish-out svg{animation:vanish-out .32s ease forwards;}
-  @keyframes vanish-out{0%{opacity:0.85;transform:scale(1) rotate(0deg);}100%{opacity:0;transform:scale(0.35) rotate(14deg);}}
+  .board-wrap .rivet{
+    position:absolute;width:8px;height:8px;border-radius:50%;
+    background:rgba(54,47,61,0.18);box-shadow:inset 0 1px 1px rgba(0,0,0,0.2);
+  }
+  .rivet.tl{top:10px;left:10px;}
+  .rivet.tr{top:10px;right:10px;}
+  .rivet.bl{bottom:10px;left:10px;}
+  .rivet.br{bottom:10px;right:10px;}
 
-  .btn{font-family:var(--font-body);font-weight:700;padding:8px 16px;border-radius:20px;border:1px solid var(--surface-edge);background:var(--surface-strong);color:var(--ink);cursor:pointer;}
-  .overlay{position:fixed;inset:0;background:rgba(46,41,53,0.55);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:50;}
-  .modal{width:100%;max-width:380px;padding:26px;}
+  .board{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,1fr);
+    width:min(320px,84vw);
+    aspect-ratio:1/1;
+    gap:8px;
+    background:rgba(255,255,255,0.35);
+    border-radius:var(--radius-md);
+    padding:10px;
+    border:1px solid rgba(255,255,255,0.6);
+    position:relative;
+  }
+  .cell{
+    background:rgba(255,255,255,0.35);
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    position:relative;
+    transition:background .15s ease, transform .1s ease;
+  }
+  .cell:hover{background:rgba(255,255,255,0.55);}
+  .cell:active{transform:scale(0.97);}
+  .cell.disabled{cursor:default;}
+  .cell svg{width:64%;height:64%;transition:opacity .35s ease, transform .35s ease;transform-origin:center;}
+
+  /* ---------- ANIMAZIONI DI LAMPEGGIAMENTO ---------- */
+  /* Lampeggio del simbolo (opacità + scala) */
+  .cell.fading svg {
+    animation: gentle-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes gentle-pulse {
+    0%, 100% { opacity: 0.9; transform: scale(1); }
+    50% { opacity: 0.25; transform: scale(0.88); }
+  }
+
+  /* Bordo luminoso del colore del giocatore */
+  .cell.fading.p1-fade {
+    animation: border-pulse-p1 1.2s ease-in-out infinite;
+  }
+  .cell.fading.p2-fade {
+    animation: border-pulse-p2 1.2s ease-in-out infinite;
+  }
+  @keyframes border-pulse-p1 {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(240,166,60,0); }
+    50% { box-shadow: 0 0 20px 8px rgba(240,166,60,0.7); }
+  }
+  @keyframes border-pulse-p2 {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(207,227,78,0); }
+    50% { box-shadow: 0 0 20px 8px rgba(207,227,78,0.7); }
+  }
+
+  .cell.pop-in svg{animation:pop-in .32s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes pop-in{
+    0%{transform:scale(0.25);opacity:0;}
+    65%{transform:scale(1.14);opacity:1;}
+    100%{transform:scale(1);opacity:1;}
+  }
+
+  .cell.vanish-out svg{animation:vanish-out .32s ease forwards;}
+  @keyframes vanish-out{
+    0%{opacity:0.85;transform:scale(1) rotate(0deg);}
+    100%{opacity:0;transform:scale(0.35) rotate(14deg);}
+  }
+
+  .cell.shake{animation:cell-shake .32s ease;}
+  @keyframes cell-shake{
+    0%,100%{transform:translateX(0);}
+    20%{transform:translateX(-4px);}
+    40%{transform:translateX(4px);}
+    60%{transform:translateX(-3px);}
+    80%{transform:translateX(3px);}
+  }
+
+  .cell.win-cell{background:rgba(255,255,255,0.7);animation:win-glow 1.15s ease-in-out infinite;}
+  @keyframes win-glow{
+    0%,100%{box-shadow:0 0 0 0 rgba(0,0,0,0);}
+    50%{box-shadow:0 0 16px 4px var(--glow-color, rgba(255,255,255,0.6));}
+  }
+
+  .win-line{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .2s ease;}
+  .win-line.visible{opacity:1;}
+  .win-line-path{stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 2px 3px rgba(54,47,61,0.3));}
+  .win-line-path.drawn{stroke-dashoffset:0;transition:stroke-dashoffset .5s cubic-bezier(.4,0,.2,1) .05s;}
+
+  /* ---------- INFO STRIP ---------- */
+  .rule-info{
+    padding:10px 16px;
+    text-align:center;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    max-width:320px;
+  }
+  .rule-info b{color:var(--ink);}
+
+  .toolbar{display:flex;gap:8px;margin-top:2px;}
+  .btn{
+    font-family:var(--font-body);font-weight:700;font-size:12px;letter-spacing:.04em;
+    padding:8px 16px;border-radius:20px;border:1px solid var(--surface-edge);
+    background:var(--surface-strong);color:var(--ink);cursor:pointer;
+    box-shadow:0 6px 14px -6px rgba(54,47,61,0.3);
+  }
+  .btn:hover{filter:brightness(1.03);}
+  .btn.primary{background:linear-gradient(120deg, var(--p1), var(--p2));color:#2c2632;border:none;}
+
+  /* ---------- OVERLAYS ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(46,41,53,0.55);backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;z-index:50;padding:16px;
+    overflow-y:auto;
+  }
+  .overlay.hidden{display:none;}
+  .overlay:not(.hidden){animation:overlay-fade .2s ease;}
+  @keyframes overlay-fade{from{opacity:0;}to{opacity:1;}}
+  .modal{width:100%;max-width:380px;padding:26px 24px 22px;text-align:center;}
+  .overlay:not(.hidden) .modal{animation:modal-in .3s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes modal-in{
+    from{opacity:0;transform:translateY(16px) scale(0.96);}
+    to{opacity:1;transform:translateY(0) scale(1);}
+  }
+  @media (max-width:400px){
+    .modal{padding:20px 18px 18px;max-width:100%;}
+    .modal h2{font-size:17px;}
+  }
+  .modal h2{font-size:20px;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px;}
+  .modal p.sub{color:var(--ink-soft);font-size:13px;margin-bottom:18px;}
+  .field{text-align:left;margin-bottom:12px;}
+  .field label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px;font-weight:700;}
+  .field input{
+    width:100%;padding:12px;border-radius:10px;border:1px solid var(--line);
+    background:rgba(255,255,255,0.7);font-size:16px;font-family:var(--font-body);color:var(--ink);
+  }
+  .field input:focus{outline:2px solid var(--p1-glow);}
+  .field.p1 input{border-color:var(--p1-glow);}
+  .field.p2 input{border-color:var(--p2-glow);}
+  .field small{display:block;margin-top:5px;color:var(--ink-faint);font-size:11px;}
+  .modal .btn.primary{width:100%;padding:12px;font-size:13px;margin-top:6px;}
+
+  .round-result{font-size:15px;color:var(--ink-soft);margin-bottom:14px;}
+  .round-result b{display:block;font-size:22px;margin-top:4px;color:var(--ink);}
+
+  footer.credit{margin-top:26px;font-size:11px;color:var(--ink-faint);text-align:center;line-height:1.6;}
+
   .hidden{display:none !important;}
-  .online-pill{display:inline-flex;align-items:center;gap:6px;font-size:10px;text-transform:uppercase;padding:4px 10px;border-radius:20px;background:var(--surface-strong);}
+
+  /* ---------- MODE / ONLINE SETUP ---------- */
+  .mode-choice-btn{
+    display:block;width:100%;text-align:center;padding:14px;margin-bottom:10px;
+    border-radius:14px;border:1px solid var(--surface-edge);background:var(--surface-strong);
+    font-family:var(--font-body);font-weight:700;font-size:14px;color:var(--ink);cursor:pointer;
+    box-shadow:0 6px 14px -6px rgba(54,47,61,0.3);
+  }
+  .mode-choice-btn.primary{background:linear-gradient(120deg, var(--p1), var(--p2));border:none;color:#2c2632;}
+  .mode-choice-btn:hover{filter:brightness(1.03);}
+  .mode-choice-btn small{display:block;font-weight:400;font-size:11px;margin-top:3px;opacity:.75;text-transform:none;letter-spacing:0;}
+
+  .online-status{font-size:13px;color:var(--ink-soft);margin:8px 0 4px;text-align:center;}
+  .online-status.ok{color:var(--p2-deep);font-weight:700;}
+  .btn-block{width:100%;margin-bottom:12px;}
+
+  .online-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:800;
+    padding:4px 10px;border-radius:20px;background:var(--surface-strong);
+    color:var(--ink-soft);margin-bottom:2px;
+  }
+  .online-pill .pulse-dot{
+    width:7px;height:7px;border-radius:50%;background:var(--p2-deep);
+    animation:pulse-dot 1.4s ease-in-out infinite;
+  }
+  @keyframes pulse-dot{
+    0%,100%{opacity:1;}
+    50%{opacity:.35;}
+  }
 </style>
 </head>
 <body>
@@ -107,49 +356,144 @@
   <div class="site-title">
     <div class="eyebrow">Duello acrilico</div>
     <h1><span>TRIS</span> <em>SVANENTE</em></h1>
+    <p>Tre in fila per vincere. Ma occhio: i tuoi simboli più vecchi svaniscono.</p>
   </div>
 
   <div class="layout">
+    <!-- PLAYER 1 CARD (O arancio) -->
     <div class="panel player-card p1" id="card-p1">
+      <div class="symbol-badge">
+        <svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="13" fill="none" stroke="#f0a63c" stroke-width="7"/></svg>
+      </div>
       <div class="player-nick" id="nick-p1-label">Giocatore 1</div>
-      <div class="score-value" id="score-p1">0</div>
+      <div class="player-role">Gioca con O · arancio</div>
+      <div class="score-block">
+        <div class="score-label">Partite vinte</div>
+        <div class="score-value" id="score-p1">0</div>
+      </div>
+      <div class="active-badge">In gioco</div>
     </div>
 
+    <!-- CENTER -->
     <div class="center-col">
-      <div class="online-pill hidden" id="online-pill">Partita online</div>
-      <div class="panel board-wrap"><div class="board" id="board"></div></div>
+      <div class="online-pill hidden" id="online-pill"><span class="pulse-dot"></span> Partita online</div>
+      <div class="panel turn-banner p1" id="turn-banner">Turno di <b id="turn-name">Giocatore 1</b></div>
+
+      <div class="panel board-wrap">
+        <span class="rivet tl"></span><span class="rivet tr"></span>
+        <span class="rivet bl"></span><span class="rivet br"></span>
+        <div class="board" id="board"></div>
+      </div>
+
+      <div class="panel rule-info">
+        Ogni giocatore può avere al massimo <b id="max-marks">4</b> simboli sul tabellone: al successivo,
+        il tuo simbolo più vecchio (quello che lampeggia) svanisce.
+      </div>
+
       <div class="toolbar">
         <button class="btn" id="btn-restart">Ricomincia tutto</button>
+        <button class="btn hidden" id="btn-disconnect">Disconnetti</button>
       </div>
     </div>
 
+    <!-- PLAYER 2 CARD (X lime) -->
     <div class="panel player-card p2" id="card-p2">
+      <div class="symbol-badge">
+        <svg viewBox="0 0 40 40">
+          <line x1="9" y1="9" x2="31" y2="31" stroke="#cfe34e" stroke-width="7" stroke-linecap="round"/>
+          <line x1="31" y1="9" x2="9" y2="31" stroke="#cfe34e" stroke-width="7" stroke-linecap="round"/>
+        </svg>
+      </div>
       <div class="player-nick" id="nick-p2-label">Giocatore 2</div>
-      <div class="score-value" id="score-p2">0</div>
+      <div class="player-role">Gioca con X · lime</div>
+      <div class="score-block">
+        <div class="score-label">Partite vinte</div>
+        <div class="score-value" id="score-p2">0</div>
+      </div>
+      <div class="active-badge">In gioco</div>
     </div>
   </div>
 
-  <!-- OVERLAYS -->
+  <footer class="credit">
+    Ispirato all'estetica acrilica del Lucite Tic Tac Toe · nessuna dipendenza esterna<br>
+    Fatto da Stefano Kolta (con PeerJS)
+  </footer>
+
+  <!-- MODE CHOICE OVERLAY -->
   <div class="overlay" id="mode-overlay">
     <div class="panel modal">
       <h2>Come vuoi giocare?</h2>
-      <button class="btn" id="btn-mode-local" style="width:100%; margin-bottom:10px;">Stesso dispositivo</button>
-      <button class="btn" id="btn-mode-online" style="width:100%;">Online</button>
+      <p class="sub">Stesso schermo, oppure due dispositivi collegati direttamente tra loro.</p>
+
+      <button class="mode-choice-btn primary" id="btn-mode-local">
+        Stesso dispositivo
+        <small>Voi due, un solo schermo, a turno</small>
+      </button>
+      <button class="mode-choice-btn" id="btn-mode-online">
+        Online · due dispositivi
+        <small>Connessione diretta (PeerJS), codice breve</small>
+      </button>
     </div>
   </div>
 
+  <!-- SETUP OVERLAY (stesso dispositivo) -->
   <div class="overlay hidden" id="setup-overlay">
     <div class="panel modal">
-      <input type="text" id="input-nick1" placeholder="Nick 1">
-      <input type="text" id="input-nick2" placeholder="Nick 2">
-      <button class="btn" id="btn-start">Inizia</button>
+      <h2>Prepara il tris</h2>
+      <p class="sub">Due giocatori, una griglia, i simboli più vecchi che svaniscono. Chi fa tre in fila vince il round.</p>
+
+      <div class="field p1">
+        <label for="input-nick1">Nickname Giocatore 1 (O, arancio)</label>
+        <input type="text" id="input-nick1" maxlength="16" placeholder="Es. Stefano">
+      </div>
+      <div class="field p2">
+        <label for="input-nick2">Nickname Giocatore 2 (X, lime)</label>
+        <input type="text" id="input-nick2" maxlength="16" placeholder="Es. Chiara">
+      </div>
+
+      <button class="btn primary" id="btn-start">Inizia partita</button>
+      <button class="btn btn-block" id="btn-setup-back" style="margin-top:8px;">← Indietro</button>
     </div>
   </div>
 
+  <!-- ONLINE SETUP OVERLAY (con PeerJS e codice breve) -->
+  <div class="overlay hidden" id="online-overlay">
+    <div class="panel modal" style="max-width:400px;">
+      <h2>Partita online</h2>
+      <p class="sub">Inserisci un nome per la stanza (es. <b>tris123</b>).<br>Chi crea la partita condivide questo nome con l'avversario.</p>
+
+      <div class="field">
+        <label>Il tuo nickname</label>
+        <input type="text" id="online-nick" maxlength="16" placeholder="Stefano">
+      </div>
+      <div class="field">
+        <label>Nome stanza (ID)</label>
+        <input type="text" id="online-room" maxlength="20" placeholder="es. tris123">
+      </div>
+
+      <button class="mode-choice-btn primary" id="btn-connect-host">
+        Crea partita (sarai O)
+        <small>Attendi l'avversario</small>
+      </button>
+      <button class="mode-choice-btn" id="btn-connect-guest">
+        Unisciti alla stanza (sarai X)
+        <small>Inserisci lo stesso nome</small>
+      </button>
+
+      <div id="online-status" class="online-status"></div>
+      <button class="btn btn-block" id="btn-online-back" style="margin-top:6px;">← Indietro</button>
+    </div>
+  </div>
+
+  <!-- ROUND END OVERLAY -->
   <div class="overlay hidden" id="round-overlay">
     <div class="panel modal">
       <h2 id="round-title">Round concluso</h2>
-      <button class="btn" id="btn-next-round">Prossimo round</button>
+      <div class="round-result" id="round-result-text">
+        Vince questo round
+        <b id="winner-name" style="color:var(--p1-deep);">—</b>
+      </div>
+      <button class="btn primary" id="btn-next-round">Prossimo round</button>
     </div>
   </div>
 
@@ -157,68 +501,539 @@
 (function(){
   "use strict";
 
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
   const MAX_MARKS = 4;
   let cells = new Array(9).fill(null);
   let queues = {1:[], 2:[]};
   let scores = {1:0, 2:0};
+  let nicknames = {1:'Giocatore 1', 2:'Giocatore 2'};
   let currentPlayer = 1;
   let gameActive = false;
   let totalMoves = 0;
+
+  // ---- ONLINE (PeerJS) STATE ----
+  let onlineMode = false;
+  let localPlayerNumber = null;
+  let peer = null;
+  let connection = null;
+  let helloTimeout = null;
+
   const boardEl = document.getElementById('board');
   const cellEls = [];
 
-  function buildBoard(){
+  function buildBoardDOM(){
+    boardEl.innerHTML = '';
+    cellEls.length = 0;
     for(let i=0;i<9;i++){
       const d = document.createElement('div');
       d.className = 'cell';
-      d.addEventListener('click', ()=>handleCellClick(i));
+      d.addEventListener('click', ()=>handleLocalCellClick(i));
       boardEl.appendChild(d);
       cellEls.push(d);
     }
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const winSvg = document.createElementNS(svgNS, 'svg');
+    winSvg.setAttribute('id', 'win-line-svg');
+    winSvg.setAttribute('class', 'win-line');
+    boardEl.appendChild(winSvg);
   }
 
-  function syncFadingWarnings() {
-    cellEls.forEach(el => el.classList.remove('fading'));
-    const q = queues[currentPlayer];
-    if(q && q.length >= MAX_MARKS && cellEls[q[0]]) {
-      cellEls[q[0]].classList.add('fading');
-    }
+  function svgO(){
+    return '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="13" fill="none" stroke="var(--p1)" stroke-width="7"/></svg>';
+  }
+  function svgX(){
+    return '<svg viewBox="0 0 40 40">'+
+      '<line x1="9" y1="9" x2="31" y2="31" stroke="var(--p2)" stroke-width="7" stroke-linecap="round"/>'+
+      '<line x1="31" y1="9" x2="9" y2="31" stroke="var(--p2)" stroke-width="7" stroke-linecap="round"/>'+
+      '</svg>';
   }
 
-  function handleCellClick(i){
-    if(!gameActive || cells[i] !== null) return;
-    
-    cells[i] = currentPlayer;
-    queues[currentPlayer].push(i);
-    totalMoves++;
-    
-    cellEls[i].innerHTML = currentPlayer === 1 ? 'O' : 'X';
-    cellEls[i].classList.add('pop-in');
-
-    if(queues[currentPlayer].length > MAX_MARKS){
-      const old = queues[currentPlayer].shift();
-      cells[old] = null;
-      cellEls[old].classList.add('vanish-out');
-      setTimeout(()=>{ if(cells[old]===null) cellEls[old].innerHTML=''; }, 300);
+  function render(){
+    hideWinLine();
+    for(let i=0;i<9;i++){
+      const el = cellEls[i];
+      const owner = cells[i];
+      el.classList.remove('fading','pop-in','vanish-out','win-cell','shake');
+      if(owner === null){
+        el.innerHTML = '';
+        el.classList.remove('disabled');
+      } else {
+        el.innerHTML = owner === 1 ? svgO() : svgX();
+        el.classList.add('disabled');
+      }
     }
-
-    if(totalMoves >= 16) return; // Logic for win/draw would go here
-    currentPlayer = currentPlayer === 1 ? 2 : 1;
     syncFadingWarnings();
   }
 
-  document.getElementById('btn-mode-local').addEventListener('click', () => {
+  // === LAMPEGGIO SOLO DEL GIOCATORE DI TURNO ===
+  function syncFadingWarnings() {
+    // Rimuovi tutto il fading
+    cellEls.forEach(el => {
+      el.classList.remove('fading', 'p1-fade', 'p2-fade');
+    });
+
+    // Controlla la coda del giocatore corrente
+    const q = queues[currentPlayer];
+    if (q.length >= MAX_MARKS) {
+      const oldestIndex = q[0];
+      const el = cellEls[oldestIndex];
+      if (el) {
+        el.classList.add('fading');
+        // Aggiungi la classe colore specifica per il bordo
+        if (currentPlayer === 1) {
+          el.classList.add('p1-fade');
+        } else {
+          el.classList.add('p2-fade');
+        }
+      }
+    }
+  }
+
+  function placeSymbolVisual(index, player){
+    const el = cellEls[index];
+    el.classList.remove('fading','vanish-out');
+    el.innerHTML = player === 1 ? svgO() : svgX();
+    el.classList.add('disabled');
+    el.classList.remove('pop-in');
+    void el.offsetWidth;
+    el.classList.add('pop-in');
+  }
+
+  function vanishSymbolVisual(index){
+    const el = cellEls[index];
+    el.classList.remove('fading');
+    el.classList.add('vanish-out');
+    setTimeout(()=>{
+      el.innerHTML = '';
+      el.classList.remove('disabled','vanish-out');
+    }, 320);
+  }
+
+  function shakeCell(index){
+    const el = cellEls[index];
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+    setTimeout(()=>el.classList.remove('shake'), 320);
+  }
+
+  function drawWinLine(line, player){
+    const svg = document.getElementById('win-line-svg');
+    svg.innerHTML = '';
+    const w = boardEl.clientWidth, h = boardEl.clientHeight;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    const c1 = cellEls[line[0]], c2 = cellEls[line[2]];
+    const x1 = c1.offsetLeft + c1.offsetWidth/2;
+    const y1 = c1.offsetTop + c1.offsetHeight/2;
+    const x2 = c2.offsetLeft + c2.offsetWidth/2;
+    const y2 = c2.offsetTop + c2.offsetHeight/2;
+    const color = player === 1 ? '#c9822a' : '#a3b834';
+    const glow = player === 1 ? 'rgba(240,166,60,0.55)' : 'rgba(207,227,78,0.6)';
+    const lineEl = document.createElementNS('http://www.w3.org/2000/svg','line');
+    lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
+    lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
+    lineEl.setAttribute('stroke', color);
+    lineEl.setAttribute('stroke-width', 7);
+    lineEl.setAttribute('stroke-linecap', 'round');
+    lineEl.setAttribute('pathLength', '1');
+    lineEl.setAttribute('class', 'win-line-path');
+    svg.appendChild(lineEl);
+    svg.classList.add('visible');
+    line.forEach(idx=>{
+      cellEls[idx].classList.add('win-cell');
+      cellEls[idx].style.setProperty('--glow-color', glow);
+    });
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        lineEl.classList.add('drawn');
+      });
+    });
+  }
+
+  function hideWinLine(){
+    const svg = document.getElementById('win-line-svg');
+    if(!svg) return;
+    svg.classList.remove('visible');
+    svg.innerHTML = '';
+    cellEls.forEach(el=>el.classList.remove('win-cell'));
+  }
+
+  function updateTurnUI(){
+    const banner = document.getElementById('turn-banner');
+    const name = document.getElementById('turn-name');
+    banner.classList.remove('p1','p2','flash');
+    banner.classList.add('p'+currentPlayer);
+    name.textContent = nicknames[currentPlayer];
+    void banner.offsetWidth;
+    banner.classList.add('flash');
+    document.getElementById('card-p1').classList.toggle('active', currentPlayer===1);
+    document.getElementById('card-p2').classList.toggle('active', currentPlayer===2);
+  }
+
+  function updateScoresUI(){
+    document.getElementById('score-p1').textContent = scores[1];
+    document.getElementById('score-p2').textContent = scores[2];
+  }
+
+  function updateNicknameUI(){
+    document.getElementById('nick-p1-label').textContent = nicknames[1];
+    document.getElementById('nick-p2-label').textContent = nicknames[2];
+  }
+
+  function findWinningLine(player){
+    for(const line of WIN_LINES){
+      if(line.every(idx => cells[idx] === player)) return line;
+    }
+    return null;
+  }
+
+  function handleLocalCellClick(index){
+    if(!gameActive) return;
+    if(onlineMode && currentPlayer !== localPlayerNumber){
+      shakeCell(index);
+      return;
+    }
+    const canSend = cells[index] === null;
+    onCellClick(index);
+    if(onlineMode && canSend){
+      sendData({type:'move', index});
+    }
+  }
+
+  // ==================================================================
+  // ONLINE CONNESSIONE CON PEERJS
+  // ==================================================================
+  function connectViaPeer(roomId, isHost) {
+    onlineMode = true;
+    const nick = document.getElementById('online-nick').value.trim() || (isHost ? 'Giocatore 1' : 'Giocatore 2');
+    localPlayerNumber = isHost ? 1 : 2;
+    nicknames[localPlayerNumber] = nick;
+    updateNicknameUI();
+
+    const status = document.getElementById('online-status');
+    status.textContent = isHost ? 'Inizializzazione stanza...' : 'Connessione al server in corso...';
+    status.className = 'online-status';
+
+    peer = new Peer(isHost ? roomId : undefined, {
+      debug: 1
+    });
+
+    if (isHost) {
+      peer.on('connection', (conn) => {
+        connection = conn;
+        setupConnection(conn);
+        status.textContent = 'Connesso! Inizio partita in corso…';
+        status.className = 'online-status ok';
+      });
+      peer.on('open', (id) => {
+        status.textContent = `Stanza pronta: ${id}. In attesa dell'avversario…`;
+        status.className = 'online-status';
+      });
+    } else {
+      peer.on('open', () => {
+        status.textContent = 'Ricerca della stanza in corso...';
+        const conn = peer.connect(roomId);
+        connection = conn;
+        setupConnection(conn);
+      });
+    }
+
+    peer.on('error', (err) => {
+      if (err.type === 'peer-unavailable') {
+        status.textContent = 'Errore: Stanza non trovata. Controlla il nome.';
+      } else if (err.type === 'network' || err.type === 'server-error') {
+        status.textContent = 'Errore: Server PeerJS irraggiungibile.';
+      } else {
+        status.textContent = 'Errore: ' + err.message;
+      }
+      status.className = 'online-status';
+      onlineMode = false;
+    });
+  }
+
+  function setupConnection(conn) {
+    let helloReceived = false;
+
+    conn.on('open', () => {
+      document.getElementById('online-overlay').classList.add('hidden');
+      document.getElementById('online-pill').classList.remove('hidden');
+      document.getElementById('btn-disconnect').classList.remove('hidden');
+      document.getElementById('btn-restart').textContent = 'Azzera punteggio';
+
+      scores = {1:0, 2:0};
+      updateScoresUI();
+
+      const myNick = nicknames[localPlayerNumber];
+      conn.send({type:'hello', nickname: myNick});
+
+      if (helloTimeout) clearTimeout(helloTimeout);
+      helloTimeout = setTimeout(() => {
+        if (!helloReceived && !gameActive) {
+          const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
+          nicknames[remotePlayer] = 'Avversario';
+          updateNicknameUI();
+          startNewRound(1);
+        }
+        helloTimeout = null;
+      }, 5000);
+    });
+
+    conn.on('data', (data) => {
+      if (data.type === 'hello') {
+        helloReceived = true;
+        if (helloTimeout) {
+          clearTimeout(helloTimeout);
+          helloTimeout = null;
+        }
+        const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
+        nicknames[remotePlayer] = data.nickname || 'Avversario';
+        updateNicknameUI();
+
+        if (!gameActive) {
+          startNewRound(1);
+        }
+        return;
+      }
+      if (data.type === 'move' && onlineMode && gameActive) {
+        onCellClick(data.index);
+      } else if (data.type === 'next-round') {
+        document.getElementById('round-overlay').classList.add('hidden');
+        if (!gameActive) {
+          startNewRound(data.startingPlayer);
+        }
+      } else if (data.type === 'restart') {
+        scores = {1:0, 2:0};
+        updateScoresUI();
+        document.getElementById('round-overlay').classList.add('hidden');
+        if (!gameActive) {
+          startNewRound(1);
+        }
+      }
+    });
+
+    conn.on('close', () => {
+      handleOnlineDisconnect();
+    });
+  }
+
+  function sendData(obj) {
+    if (connection && connection.open) {
+      connection.send(obj);
+    }
+  }
+
+  function handleOnlineDisconnect() {
+    onlineMode = false;
+    gameActive = false;
+    localPlayerNumber = null;
+    if (helloTimeout) {
+      clearTimeout(helloTimeout);
+      helloTimeout = null;
+    }
+    document.getElementById('turn-name').textContent = 'connessione persa';
+    document.getElementById('online-pill').classList.add('hidden');
+    document.getElementById('btn-disconnect').classList.add('hidden');
+    if (peer) { peer.destroy(); peer = null; }
+    connection = null;
+  }
+
+  function resetOnlineConnection() {
+    if (peer) { peer.destroy(); peer = null; }
+    connection = null;
+    onlineMode = false;
+    gameActive = false;
+    localPlayerNumber = null;
+    if (helloTimeout) {
+      clearTimeout(helloTimeout);
+      helloTimeout = null;
+    }
+    document.getElementById('online-pill').classList.add('hidden');
+    document.getElementById('btn-disconnect').classList.add('hidden');
+    document.getElementById('btn-restart').textContent = 'Ricomincia tutto';
+    document.getElementById('online-status').textContent = '';
+    document.getElementById('online-status').className = 'online-status';
+  }
+
+  // ==================================================================
+  // LOGICA DI GIOCO (con limite di 16 mosse)
+  // ==================================================================
+
+  function onCellClick(index){
+    if(!gameActive) return;
+    if(cells[index] !== null){
+      shakeCell(index);
+      return;
+    }
+
+    cells[index] = currentPlayer;
+    queues[currentPlayer].push(index);
+    totalMoves++;
+
+    placeSymbolVisual(index, currentPlayer);
+
+    // Rimuovi il pezzo più vecchio se necessario (max 4 per giocatore)
+    if(queues[currentPlayer].length > MAX_MARKS){
+      const oldIdx = queues[currentPlayer].shift();
+      cells[oldIdx] = null;
+      vanishSymbolVisual(oldIdx);
+    }
+
+    // Controlla vittoria
+    const winLine = findWinningLine(currentPlayer);
+    if(winLine){
+      endRound(currentPlayer, winLine);
+      return;
+    }
+
+    // Pareggio dopo 16 mosse (8 per giocatore)
+    if(totalMoves >= 16){
+      endRound(null, null);
+      return;
+    }
+
+    // Passa il turno
+    currentPlayer = currentPlayer === 1 ? 2 : 1;
+    updateTurnUI();
+    // Aggiorna il lampeggiamento per il nuovo giocatore
+    syncFadingWarnings();
+  }
+
+  function endRound(winner, winLine){
+    gameActive = false;
+    const overlay = document.getElementById('round-overlay');
+    const title = document.getElementById('round-title');
+    const resultText = document.getElementById('round-result-text');
+
+    if(winner === null){
+      title.textContent = 'Pareggio';
+      resultText.innerHTML = 'Nessuno ha fatto tre in fila entro il limite di mosse.';
+    } else {
+      if(winLine) drawWinLine(winLine, winner);
+      scores[winner] += 1;
+      updateScoresUI();
+      title.textContent = 'Round concluso';
+      resultText.innerHTML = 'Vince questo round <b id="winner-name-inner"></b>';
+      const b = resultText.querySelector('b');
+      b.textContent = nicknames[winner];
+      b.style.color = winner === 1 ? 'var(--p1-deep)' : 'var(--p2-deep)';
+    }
+
+    setTimeout(()=>{
+      document.getElementById('btn-next-round').disabled = false;
+      overlay.classList.remove('hidden');
+    }, winner !== null ? 550 : 0);
+  }
+
+  function startNewRound(startingPlayer){
+    cells = new Array(9).fill(null);
+    queues = {1:[], 2:[]};
+    currentPlayer = startingPlayer;
+    gameActive = true;
+    totalMoves = 0;
+    updateTurnUI();
+    render(); // chiama render() che a sua volta chiama syncFadingWarnings()
+  }
+
+  // ---------------- MODE SELECTION ----------------
+  document.getElementById('btn-mode-local').addEventListener('click', ()=>{
     document.getElementById('mode-overlay').classList.add('hidden');
     document.getElementById('setup-overlay').classList.remove('hidden');
   });
 
-  document.getElementById('btn-start').addEventListener('click', () => {
-    document.getElementById('setup-overlay').classList.add('hidden');
-    gameActive = true;
-    syncFadingWarnings();
+  document.getElementById('btn-mode-online').addEventListener('click', ()=>{
+    document.getElementById('mode-overlay').classList.add('hidden');
+    document.getElementById('online-overlay').classList.remove('hidden');
   });
 
-  buildBoard();
+  document.getElementById('btn-setup-back').addEventListener('click', ()=>{
+    document.getElementById('setup-overlay').classList.add('hidden');
+    document.getElementById('mode-overlay').classList.remove('hidden');
+  });
+
+  document.getElementById('btn-online-back').addEventListener('click', ()=>{
+    resetOnlineConnection();
+    document.getElementById('online-overlay').classList.add('hidden');
+    document.getElementById('mode-overlay').classList.remove('hidden');
+  });
+
+  // ---------------- LOCAL MODE ----------------
+  document.getElementById('btn-start').addEventListener('click', ()=>{
+    const n1 = document.getElementById('input-nick1').value.trim();
+    const n2 = document.getElementById('input-nick2').value.trim();
+
+    onlineMode = false;
+    nicknames[1] = n1 || 'Giocatore 1';
+    nicknames[2] = n2 || 'Giocatore 2';
+
+    scores = {1:0, 2:0};
+    updateScoresUI();
+    updateNicknameUI();
+
+    document.getElementById('setup-overlay').classList.add('hidden');
+    startNewRound(1);
+  });
+
+  // ---------------- ONLINE MODE (PeerJS) ----------------
+  document.getElementById('btn-connect-host').addEventListener('click', ()=>{
+    const room = document.getElementById('online-room').value.trim();
+    if (!room) { alert('Inserisci un nome per la stanza.'); return; }
+    connectViaPeer(room, true);
+  });
+
+  document.getElementById('btn-connect-guest').addEventListener('click', ()=>{
+    const room = document.getElementById('online-room').value.trim();
+    if (!room) { alert('Inserisci il nome della stanza.'); return; }
+    connectViaPeer(room, false);
+  });
+
+  document.getElementById('btn-disconnect').addEventListener('click', ()=>{
+    resetOnlineConnection();
+    document.getElementById('round-overlay').classList.add('hidden');
+    document.getElementById('mode-overlay').classList.remove('hidden');
+  });
+
+  // ---------------- ROUND FLOW ----------------
+  document.getElementById('btn-next-round').addEventListener('click', (e)=>{
+    const btn = e.target;
+    if (btn.disabled) return;
+    btn.disabled = true;
+
+    document.getElementById('round-overlay').classList.add('hidden');
+    const starting = currentPlayer === 1 ? 2 : 1;
+
+    if(onlineMode) {
+      sendData({type:'next-round', startingPlayer: starting});
+    }
+
+    if (!gameActive) {
+      startNewRound(starting);
+    }
+  });
+
+  document.getElementById('btn-restart').addEventListener('click', ()=>{
+    document.getElementById('round-overlay').classList.add('hidden');
+    if(onlineMode){
+      scores = {1:0, 2:0};
+      updateScoresUI();
+      sendData({type:'restart'});
+      if (!gameActive) {
+        startNewRound(1);
+      }
+    } else {
+      document.getElementById('setup-overlay').classList.remove('hidden');
+      gameActive = false;
+    }
+  });
+
+  // ---------------- INIT ----------------
+  buildBoardDOM();
+  render();
+
 })();
 </script>
 </body>
