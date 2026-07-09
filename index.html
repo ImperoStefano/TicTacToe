@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Tris Svanente</title>
+
+<!-- Libreria PeerJS per connessioni P2P con codice breve -->
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
 <style>
   :root{
     --bg-1:#cec9d2;
@@ -306,15 +310,9 @@
   .mode-choice-btn:hover{filter:brightness(1.03);}
   .mode-choice-btn small{display:block;font-weight:400;font-size:11px;margin-top:3px;opacity:.75;text-transform:none;letter-spacing:0;}
 
-  .code-box{
-    width:100%;font-family:var(--font-num);font-size:11px;line-height:1.4;
-    padding:9px 10px;border-radius:10px;border:1px solid var(--line);
-    background:rgba(255,255,255,0.75);color:var(--ink);resize:vertical;
-  }
-  .online-status{font-size:12px;color:var(--ink-soft);margin:6px 0 10px;text-align:left;}
+  .online-status{font-size:13px;color:var(--ink-soft);margin:8px 0 4px;text-align:center;}
   .online-status.ok{color:var(--p2-deep);font-weight:700;}
   .btn-block{width:100%;margin-bottom:12px;}
-  .divider-or{text-align:center;font-size:11px;color:var(--ink-faint);letter-spacing:.1em;text-transform:uppercase;margin:14px 0;}
 
   .online-pill{
     display:inline-flex;align-items:center;gap:6px;
@@ -329,7 +327,8 @@
   @keyframes pulse-dot{
     0%,100%{opacity:1;}
     50%{opacity:.35;}
-  }</style>
+  }
+</style>
 </head>
 <body>
 
@@ -411,7 +410,7 @@
       </button>
       <button class="mode-choice-btn" id="btn-mode-online">
         Online · due dispositivi
-        <small>Connessione diretta (WebRTC), nessun server</small>
+        <small>Connessione diretta (PeerJS), codice breve</small>
       </button>
     </div>
   </div>
@@ -436,64 +435,31 @@
     </div>
   </div>
 
-  <!-- ONLINE SETUP OVERLAY -->
+  <!-- ONLINE SETUP OVERLAY (con PeerJS e codice breve) -->
   <div class="overlay hidden" id="online-overlay">
-    <div class="panel modal" style="max-width:440px;">
+    <div class="panel modal" style="max-width:400px;">
       <h2>Partita online</h2>
-      <p class="sub">Connessione diretta tra i due dispositivi (WebRTC), nessun server. Un giocatore crea la partita, l'altro si unisce con un codice.</p>
+      <p class="sub">Inserisci un nome per la stanza (es. <b>tris123</b>).<br>Chi crea la partita condivide questo nome con l'avversario.</p>
 
       <div class="field">
-        <label for="input-online-nick">Il tuo nickname</label>
-        <input type="text" id="input-online-nick" maxlength="16" placeholder="Es. Stefano">
+        <label>Il tuo nickname</label>
+        <input type="text" id="online-nick" maxlength="16" placeholder="Stefano">
+      </div>
+      <div class="field">
+        <label>Nome stanza (ID)</label>
+        <input type="text" id="online-room" maxlength="20" placeholder="es. tris123">
       </div>
 
-      <div id="online-role-select">
-        <button class="mode-choice-btn primary" id="btn-role-host">
-          Crea partita
-          <small>Sarai O, arancio</small>
-        </button>
-        <button class="mode-choice-btn" id="btn-role-guest">
-          Ho un codice, mi unisco
-          <small>Sarai X, lime</small>
-        </button>
-      </div>
+      <button class="mode-choice-btn primary" id="btn-connect-host">
+        Crea partita (sarai O)
+        <small>Attendi l'avversario</small>
+      </button>
+      <button class="mode-choice-btn" id="btn-connect-guest">
+        Unisciti alla stanza (sarai X)
+        <small>Inserisci lo stesso nome</small>
+      </button>
 
-      <!-- HOST FLOW -->
-      <div id="online-host-section" class="hidden">
-        <p class="online-status" id="host-status-text">Generazione del codice invito…</p>
-        <div class="field">
-          <label>Codice invito — invialo al tuo avversario</label>
-          <textarea id="host-offer-code" class="code-box" rows="3" readonly></textarea>
-        </div>
-        <button class="btn btn-block" id="btn-copy-offer">Copia codice</button>
-
-        <div class="divider-or">poi</div>
-
-        <div class="field">
-          <label for="host-answer-input">Incolla qui il codice di risposta ricevuto</label>
-          <textarea id="host-answer-input" class="code-box" rows="3" placeholder="Incolla qui il codice del tuo avversario"></textarea>
-        </div>
-        <button class="btn primary btn-block" id="btn-complete-connection">Completa connessione</button>
-      </div>
-
-      <!-- GUEST FLOW -->
-      <div id="online-guest-section" class="hidden">
-        <div class="field">
-          <label for="guest-offer-input">Incolla qui il codice invito ricevuto</label>
-          <textarea id="guest-offer-input" class="code-box" rows="3" placeholder="Incolla qui il codice del tuo avversario"></textarea>
-        </div>
-        <button class="btn primary btn-block" id="btn-generate-answer">Genera codice di risposta</button>
-
-        <div id="guest-answer-block" class="hidden">
-          <div class="field">
-            <label>Codice di risposta — invialo al tuo avversario</label>
-            <textarea id="guest-answer-code" class="code-box" rows="3" readonly></textarea>
-          </div>
-          <button class="btn btn-block" id="btn-copy-answer">Copia codice</button>
-          <p class="online-status" id="guest-wait-text">In attesa che l'host completi la connessione…</p>
-        </div>
-      </div>
-
+      <div id="online-status" class="online-status"></div>
       <button class="btn btn-block" id="btn-online-back" style="margin-top:6px;">← Indietro</button>
     </div>
   </div>
@@ -528,14 +494,11 @@
   let currentPlayer = 1;
   let gameActive = false;
 
-  // ---- ONLINE (WebRTC) STATE ----
+  // ---- ONLINE (PeerJS) STATE ----
   let onlineMode = false;
-  let localPlayerNumber = null;   // 1 = host, 2 = guest, when online
-  let peerConnection = null;
-  let dataChannel = null;
-  let remoteHelloReceived = false;
-  let onlineStarted = false;
-  const ICE_SERVERS = [{urls: 'stun:stun.l.google.com:19302'}];
+  let localPlayerNumber = null;   // 1 = host, 2 = guest
+  let peer = null;
+  let connection = null;
 
   const boardEl = document.getElementById('board');
   const cellEls = [];
@@ -718,169 +681,135 @@
   }
 
   // ==================================================================
-  // WEBRTC ONLINE MODE (connessione diretta, nessun server)
+  // ONLINE CONNESSIONE CON PEERJS (codice breve)
   // ==================================================================
 
-  function encodeSDP(desc){
-    return btoa(unescape(encodeURIComponent(JSON.stringify({type: desc.type, sdp: desc.sdp}))));
-  }
-  function decodeSDP(code){
-    return JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
-  }
+  function connectViaPeer(roomId, isHost) {
+    onlineMode = true;
+    const nick = document.getElementById('online-nick').value.trim() || (isHost ? 'Giocatore 1' : 'Giocatore 2');
+    localPlayerNumber = isHost ? 1 : 2;
+    nicknames[localPlayerNumber] = nick;
+    updateNicknameUI();
 
-  function waitIceGatheringComplete(pc){
-    return new Promise(resolve=>{
-      if(pc.iceGatheringState === 'complete'){ resolve(); return; }
-      const onChange = ()=>{
-        if(pc.iceGatheringState === 'complete'){
-          pc.removeEventListener('icegatheringstatechange', onChange);
-          resolve();
-        }
-      };
-      pc.addEventListener('icegatheringstatechange', onChange);
-      setTimeout(resolve, 4000); // fallback: usa i candidati raccolti finora
+    const status = document.getElementById('online-status');
+    status.textContent = isHost ? 'In attesa che l’avversario si connetta…' : 'Connessione in corso…';
+    status.className = 'online-status';
+
+    peer = new Peer(isHost ? roomId : undefined, {
+      debug: 0
+    });
+
+    if (isHost) {
+      // Host: aspetta che qualcuno si connetta
+      peer.on('connection', (conn) => {
+        connection = conn;
+        setupConnection(conn);
+        status.textContent = 'Connesso! Inizio partita…';
+        status.className = 'online-status ok';
+      });
+      peer.on('open', (id) => {
+        status.textContent = `ID stanza: ${id}. In attesa…`;
+        status.className = 'online-status';
+      });
+    } else {
+      // Guest: si connette all'ID scelto
+      const conn = peer.connect(roomId);
+      connection = conn;
+      setupConnection(conn);
+      // La connessione si attiverà quando l'host la accetta
+      status.textContent = 'Connessione in corso…';
+      status.className = 'online-status';
+    }
+
+    peer.on('error', (err) => {
+      status.textContent = 'Errore: ' + err.message;
+      status.className = 'online-status';
+      onlineMode = false;
     });
   }
 
-  function attachDataChannelHandlers(channel){
-    channel.onopen = ()=>{
-      setOnlineStatus('host', 'Connesso! Avvio partita…', true);
-      setOnlineStatus('guest', 'Connesso! Avvio partita…', true);
-      sendData({type:'hello', nickname: nicknames[localPlayerNumber]});
-      maybeFinalizeOnlineStart();
-    };
-    channel.onclose = ()=>{ handleOnlineDisconnect(); };
-    channel.onerror = ()=>{ handleOnlineDisconnect(); };
-    channel.onmessage = (evt)=>{
-      try{
-        handleRemoteMessage(JSON.parse(evt.data));
-      }catch(e){ /* messaggio non valido, ignorato */ }
-    };
-  }
-
-  function sendData(obj){
-    if(dataChannel && dataChannel.readyState === 'open'){
-      dataChannel.send(JSON.stringify(obj));
-    }
-  }
-
-  function handleRemoteMessage(msg){
-    if(msg.type === 'hello'){
-      const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
-      nicknames[remotePlayer] = msg.nickname || nicknames[remotePlayer];
-      remoteHelloReceived = true;
-      maybeFinalizeOnlineStart();
-      return;
-    }
-    if(!onlineMode) return;
-    if(msg.type === 'move'){
-      if(gameActive) onCellClick(msg.index);
-    } else if(msg.type === 'next-round'){
-      document.getElementById('round-overlay').classList.add('hidden');
-      startNewRound(msg.startingPlayer);
-    } else if(msg.type === 'restart'){
+  function setupConnection(conn) {
+    conn.on('open', () => {
+      document.getElementById('online-overlay').classList.add('hidden');
+      document.getElementById('online-pill').classList.remove('hidden');
+      document.getElementById('btn-disconnect').classList.remove('hidden');
+      document.getElementById('btn-restart').textContent = 'Azzera punteggio';
       scores = {1:0, 2:0};
       updateScoresUI();
-      document.getElementById('round-overlay').classList.add('hidden');
-      startNewRound(1);
+      // Scambia i nickname
+      const myNick = nicknames[localPlayerNumber];
+      conn.send({type:'hello', nickname: myNick});
+      // Avvia il gioco (l'hello dell'altro farà partire la partita)
+      // Per sicurezza, se dopo 1 secondo non arriva l'hello, avviamo comunque
+      setTimeout(() => {
+        if (!gameActive) {
+          startNewRound(1);
+          gameActive = true;
+        }
+      }, 1000);
+    });
+
+    conn.on('data', (data) => {
+      if (data.type === 'hello') {
+        const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
+        nicknames[remotePlayer] = data.nickname || 'Avversario';
+        updateNicknameUI();
+        // Avvia il gioco se non già avviato
+        if (!gameActive) {
+          startNewRound(1);
+          gameActive = true;
+        }
+        return;
+      }
+      if (data.type === 'move' && onlineMode && gameActive) {
+        onCellClick(data.index);
+      } else if (data.type === 'next-round') {
+        document.getElementById('round-overlay').classList.add('hidden');
+        startNewRound(data.startingPlayer);
+      } else if (data.type === 'restart') {
+        scores = {1:0, 2:0};
+        updateScoresUI();
+        document.getElementById('round-overlay').classList.add('hidden');
+        startNewRound(1);
+      }
+    });
+
+    conn.on('close', () => {
+      handleOnlineDisconnect();
+    });
+  }
+
+  function sendData(obj) {
+    if (connection && connection.open) {
+      connection.send(obj);
     }
   }
 
-  function maybeFinalizeOnlineStart(){
-    if(onlineStarted) return;
-    if(!dataChannel || dataChannel.readyState !== 'open') return;
-    if(!remoteHelloReceived) return;
-    onlineStarted = true;
-    document.getElementById('online-overlay').classList.add('hidden');
-    document.getElementById('online-pill').classList.remove('hidden');
-    document.getElementById('btn-disconnect').classList.remove('hidden');
-    document.getElementById('btn-restart').textContent = 'Azzera punteggio';
-    scores = {1:0, 2:0};
-    updateScoresUI();
-    updateNicknameUI();
-    startNewRound(1);
-  }
-
-  function setOnlineStatus(who, text, ok){
-    const id = who === 'host' ? 'host-status-text' : 'guest-wait-text';
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.textContent = text;
-    el.classList.toggle('ok', !!ok);
-  }
-
-  async function startAsHost(){
-    localPlayerNumber = 1;
-    peerConnection = new RTCPeerConnection({iceServers: ICE_SERVERS});
-    dataChannel = peerConnection.createDataChannel('game');
-    attachDataChannelHandlers(dataChannel);
-
-    setOnlineStatus('host', 'Generazione del codice invito…', false);
-    const offer = await peerConnection.createOffer();
-    await peerConnection.setLocalDescription(offer);
-    await waitIceGatheringComplete(peerConnection);
-
-    const code = encodeSDP(peerConnection.localDescription);
-    document.getElementById('host-offer-code').value = code;
-    setOnlineStatus('host', 'Invia questo codice al tuo avversario, poi incolla qui sotto la sua risposta.', false);
-  }
-
-  async function joinAsGuestGenerateAnswer(offerCode){
-    localPlayerNumber = 2;
-    peerConnection = new RTCPeerConnection({iceServers: ICE_SERVERS});
-    peerConnection.ondatachannel = (evt)=>{
-      dataChannel = evt.channel;
-      attachDataChannelHandlers(dataChannel);
-    };
-
-    const offerDesc = decodeSDP(offerCode);
-    await peerConnection.setRemoteDescription(offerDesc);
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    await waitIceGatheringComplete(peerConnection);
-
-    return encodeSDP(peerConnection.localDescription);
-  }
-
-  async function hostCompleteConnection(answerCode){
-    const answerDesc = decodeSDP(answerCode);
-    await peerConnection.setRemoteDescription(answerDesc);
-    setOnlineStatus('host', 'Connessione in corso…', false);
-  }
-
-  function handleOnlineDisconnect(){
-    if(!onlineMode) return;
+  function handleOnlineDisconnect() {
+    onlineMode = false;
     gameActive = false;
-    const banner = document.getElementById('turn-banner');
-    banner.classList.remove('p1','p2');
     document.getElementById('turn-name').textContent = 'connessione persa';
     document.getElementById('online-pill').classList.add('hidden');
+    document.getElementById('btn-disconnect').classList.add('hidden');
+    if (peer) { peer.destroy(); peer = null; }
+    connection = null;
   }
 
-  function resetOnlineConnection(){
+  function resetOnlineConnection() {
+    if (peer) { peer.destroy(); peer = null; }
+    connection = null;
     onlineMode = false;
-    onlineStarted = false;
-    remoteHelloReceived = false;
-    localPlayerNumber = null;
-    if(peerConnection){
-      try{ peerConnection.close(); }catch(e){}
-    }
-    peerConnection = null;
-    dataChannel = null;
+    gameActive = false;
     document.getElementById('online-pill').classList.add('hidden');
     document.getElementById('btn-disconnect').classList.add('hidden');
     document.getElementById('btn-restart').textContent = 'Ricomincia tutto';
-
-    // reset online UI panels for a fresh attempt next time
-    document.getElementById('online-role-select').classList.remove('hidden');
-    document.getElementById('online-host-section').classList.add('hidden');
-    document.getElementById('online-guest-section').classList.add('hidden');
-    document.getElementById('guest-answer-block').classList.add('hidden');
-    document.getElementById('host-offer-code').value = '';
-    document.getElementById('host-answer-input').value = '';
-    document.getElementById('guest-offer-input').value = '';
-    document.getElementById('guest-answer-code').value = '';
+    document.getElementById('online-status').textContent = '';
+    document.getElementById('online-status').className = 'online-status';
   }
+
+  // ==================================================================
+  // LOGICA DI GIOCO (invariata)
+  // ==================================================================
 
   function onCellClick(index){
     if(!gameActive) return;
@@ -950,18 +879,6 @@
     render();
   }
 
-  function copyFromTextarea(id){
-    const el = document.getElementById(id);
-    if(!el || !el.value) return;
-    el.select();
-    el.setSelectionRange(0, 99999);
-    try{
-      document.execCommand('copy');
-    }catch(e){
-      if(navigator.clipboard) navigator.clipboard.writeText(el.value).catch(()=>{});
-    }
-  }
-
   // ---------------- MODE SELECTION ----------------
   document.getElementById('btn-mode-local').addEventListener('click', ()=>{
     document.getElementById('mode-overlay').classList.add('hidden');
@@ -1001,56 +918,23 @@
     startNewRound(1);
   });
 
-  // ---------------- ONLINE MODE ----------------
-  document.getElementById('btn-role-host').addEventListener('click', ()=>{
-    const nick = document.getElementById('input-online-nick').value.trim() || 'Giocatore 1';
-    nicknames[1] = nick;
-    onlineMode = true;
-    document.getElementById('online-role-select').classList.add('hidden');
-    document.getElementById('online-host-section').classList.remove('hidden');
-    startAsHost();
+  // ---------------- ONLINE MODE (PeerJS) ----------------
+  document.getElementById('btn-connect-host').addEventListener('click', ()=>{
+    const room = document.getElementById('online-room').value.trim();
+    if (!room) { alert('Inserisci un nome per la stanza.'); return; }
+    connectViaPeer(room, true);
   });
 
-  document.getElementById('btn-role-guest').addEventListener('click', ()=>{
-    onlineMode = true;
-    document.getElementById('online-role-select').classList.add('hidden');
-    document.getElementById('online-guest-section').classList.remove('hidden');
-  });
-
-  document.getElementById('btn-copy-offer').addEventListener('click', ()=>{
-    copyFromTextarea('host-offer-code');
-  });
-  document.getElementById('btn-copy-answer').addEventListener('click', ()=>{
-    copyFromTextarea('guest-answer-code');
-  });
-
-  document.getElementById('btn-complete-connection').addEventListener('click', ()=>{
-    const answerCode = document.getElementById('host-answer-input').value.trim();
-    if(!answerCode) return;
-    hostCompleteConnection(answerCode).catch(()=>{
-      setOnlineStatus('host', 'Codice non valido, riprova.', false);
-    });
-  });
-
-  document.getElementById('btn-generate-answer').addEventListener('click', ()=>{
-    const offerCode = document.getElementById('guest-offer-input').value.trim();
-    if(!offerCode) return;
-    const nick = document.getElementById('input-online-nick').value.trim() || 'Giocatore 2';
-    nicknames[2] = nick;
-    joinAsGuestGenerateAnswer(offerCode).then(code=>{
-      document.getElementById('guest-answer-code').value = code;
-      document.getElementById('guest-answer-block').classList.remove('hidden');
-      setOnlineStatus('guest', 'In attesa che l\'host completi la connessione…', false);
-    }).catch(()=>{
-      setOnlineStatus('guest', 'Codice non valido, controlla e riprova.', false);
-    });
+  document.getElementById('btn-connect-guest').addEventListener('click', ()=>{
+    const room = document.getElementById('online-room').value.trim();
+    if (!room) { alert('Inserisci il nome della stanza.'); return; }
+    connectViaPeer(room, false);
   });
 
   document.getElementById('btn-disconnect').addEventListener('click', ()=>{
     resetOnlineConnection();
     document.getElementById('round-overlay').classList.add('hidden');
     document.getElementById('mode-overlay').classList.remove('hidden');
-    gameActive = false;
   });
 
   // ---------------- ROUND FLOW ----------------
