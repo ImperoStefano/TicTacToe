@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Tris Svanente</title>
 
-<!-- Libreria PeerJS per connessioni P2P con codice breve -->
+<!-- Libreria PeerJS per connessioni P2P -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
 
 <style>
@@ -395,7 +395,7 @@
 
   <footer class="credit">
     Ispirato all'estetica acrilica del Lucite Tic Tac Toe · nessuna dipendenza esterna<br>
-    Fatto da Stefano Kolta
+    Fatto da Stefano Kolta (e ottimizzato!)
   </footer>
 
   <!-- MODE CHOICE OVERLAY -->
@@ -487,8 +487,8 @@
   ];
 
   const MAX_MARKS = 4;
-  let cells = new Array(9).fill(null);   // null | 1 | 2
-  let queues = {1:[], 2:[]};             // order of placed cell-indices per player
+  let cells = new Array(9).fill(null);   
+  let queues = {1:[], 2:[]};             
   let scores = {1:0, 2:0};
   let nicknames = {1:'Giocatore 1', 2:'Giocatore 2'};
   let currentPlayer = 1;
@@ -496,7 +496,7 @@
 
   // ---- ONLINE (PeerJS) STATE ----
   let onlineMode = false;
-  let localPlayerNumber = null;   // 1 = host, 2 = guest
+  let localPlayerNumber = null;   
   let peer = null;
   let connection = null;
 
@@ -570,7 +570,7 @@
     el.innerHTML = player === 1 ? svgO() : svgX();
     el.classList.add('disabled');
     el.classList.remove('pop-in');
-    void el.offsetWidth; // reflow, restarts the animation
+    void el.offsetWidth; 
     el.classList.add('pop-in');
   }
 
@@ -681,7 +681,7 @@
   }
 
   // ==================================================================
-  // ONLINE CONNESSIONE CON PEERJS (codice breve)
+  // ONLINE CONNESSIONE CON PEERJS
   // ==================================================================
 
   function connectViaPeer(roomId, isHost) {
@@ -700,11 +700,10 @@
     });
 
     if (isHost) {
-      // Host: aspetta che qualcuno si connetta
       peer.on('connection', (conn) => {
         connection = conn;
         setupConnection(conn);
-        status.textContent = 'Connesso! Inizio partita…';
+        status.textContent = 'Connesso! Inizio partita in corso…';
         status.className = 'online-status ok';
       });
       peer.on('open', (id) => {
@@ -712,11 +711,9 @@
         status.className = 'online-status';
       });
     } else {
-      // Guest: si connette all'ID scelto
       const conn = peer.connect(roomId);
       connection = conn;
       setupConnection(conn);
-      // La connessione si attiverà quando l'host la accetta
       status.textContent = 'Connessione in corso…';
       status.className = 'online-status';
     }
@@ -734,19 +731,12 @@
       document.getElementById('online-pill').classList.remove('hidden');
       document.getElementById('btn-disconnect').classList.remove('hidden');
       document.getElementById('btn-restart').textContent = 'Azzera punteggio';
+      
       scores = {1:0, 2:0};
       updateScoresUI();
-      // Scambia i nickname
+      
       const myNick = nicknames[localPlayerNumber];
       conn.send({type:'hello', nickname: myNick});
-      // Avvia il gioco (l'hello dell'altro farà partire la partita)
-      // Per sicurezza, se dopo 1 secondo non arriva l'hello, avviamo comunque
-      setTimeout(() => {
-        if (!gameActive) {
-          startNewRound(1);
-          gameActive = true;
-        }
-      }, 1000);
     });
 
     conn.on('data', (data) => {
@@ -754,10 +744,10 @@
         const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
         nicknames[remotePlayer] = data.nickname || 'Avversario';
         updateNicknameUI();
-        // Avvia il gioco se non già avviato
+        
+        // Avvia la partita quando entrambi i player si sono scambiati l'hello
         if (!gameActive) {
           startNewRound(1);
-          gameActive = true;
         }
         return;
       }
@@ -765,12 +755,16 @@
         onCellClick(data.index);
       } else if (data.type === 'next-round') {
         document.getElementById('round-overlay').classList.add('hidden');
-        startNewRound(data.startingPlayer);
+        if (!gameActive) {
+          startNewRound(data.startingPlayer);
+        }
       } else if (data.type === 'restart') {
         scores = {1:0, 2:0};
         updateScoresUI();
         document.getElementById('round-overlay').classList.add('hidden');
-        startNewRound(1);
+        if (!gameActive) {
+          startNewRound(1);
+        }
       }
     });
 
@@ -808,7 +802,7 @@
   }
 
   // ==================================================================
-  // LOGICA DI GIOCO (invariata)
+  // LOGICA DI GIOCO 
   // ==================================================================
 
   function onCellClick(index){
@@ -837,7 +831,7 @@
     }
 
     if(cells.every(c => c !== null)){
-      endRound(null, null); // draw
+      endRound(null, null); // Pareggio
       return;
     }
 
@@ -866,6 +860,7 @@
     }
 
     setTimeout(()=>{
+      document.getElementById('btn-next-round').disabled = false; // reset del blocco click
       overlay.classList.remove('hidden');
     }, winner !== null ? 550 : 0);
   }
@@ -938,11 +933,22 @@
   });
 
   // ---------------- ROUND FLOW ----------------
-  document.getElementById('btn-next-round').addEventListener('click', ()=>{
+  document.getElementById('btn-next-round').addEventListener('click', (e)=>{
+    // Blocco temporaneo per evitare doppi invii accidentali
+    const btn = e.target;
+    if (btn.disabled) return;
+    btn.disabled = true;
+
     document.getElementById('round-overlay').classList.add('hidden');
     const starting = currentPlayer === 1 ? 2 : 1;
-    startNewRound(starting);
-    if(onlineMode) sendData({type:'next-round', startingPlayer: starting});
+    
+    if(onlineMode) {
+      sendData({type:'next-round', startingPlayer: starting});
+    }
+    
+    if (!gameActive) {
+      startNewRound(starting);
+    }
   });
 
   document.getElementById('btn-restart').addEventListener('click', ()=>{
@@ -950,8 +956,10 @@
     if(onlineMode){
       scores = {1:0, 2:0};
       updateScoresUI();
-      startNewRound(1);
       sendData({type:'restart'});
+      if (!gameActive) {
+        startNewRound(1);
+      }
     } else {
       document.getElementById('setup-overlay').classList.remove('hidden');
       gameActive = false;
