@@ -395,7 +395,7 @@
 
   <footer class="credit">
     Ispirato all'estetica acrilica del Lucite Tic Tac Toe · nessuna dipendenza esterna<br>
-    Fatto da Stefano Kolta (e ottimizzato!)
+    Fatto da Stefano Kolta (con PeerJS)
   </footer>
 
   <!-- MODE CHOICE OVERLAY -->
@@ -487,8 +487,8 @@
   ];
 
   const MAX_MARKS = 4;
-  let cells = new Array(9).fill(null);   
-  let queues = {1:[], 2:[]};             
+  let cells = new Array(9).fill(null);
+  let queues = {1:[], 2:[]};
   let scores = {1:0, 2:0};
   let nicknames = {1:'Giocatore 1', 2:'Giocatore 2'};
   let currentPlayer = 1;
@@ -496,9 +496,10 @@
 
   // ---- ONLINE (PeerJS) STATE ----
   let onlineMode = false;
-  let localPlayerNumber = null;   
+  let localPlayerNumber = null;
   let peer = null;
   let connection = null;
+  let helloTimeout = null;
 
   const boardEl = document.getElementById('board');
   const cellEls = [];
@@ -570,7 +571,7 @@
     el.innerHTML = player === 1 ? svgO() : svgX();
     el.classList.add('disabled');
     el.classList.remove('pop-in');
-    void el.offsetWidth; 
+    void el.offsetWidth;
     el.classList.add('pop-in');
   }
 
@@ -597,7 +598,6 @@
     svg.innerHTML = '';
     const w = boardEl.clientWidth, h = boardEl.clientHeight;
     svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
-
     const c1 = cellEls[line[0]], c2 = cellEls[line[2]];
     const x1 = c1.offsetLeft + c1.offsetWidth/2;
     const y1 = c1.offsetTop + c1.offsetHeight/2;
@@ -605,7 +605,6 @@
     const y2 = c2.offsetTop + c2.offsetHeight/2;
     const color = player === 1 ? '#c9822a' : '#a3b834';
     const glow = player === 1 ? 'rgba(240,166,60,0.55)' : 'rgba(207,227,78,0.6)';
-
     const lineEl = document.createElementNS('http://www.w3.org/2000/svg','line');
     lineEl.setAttribute('x1', x1); lineEl.setAttribute('y1', y1);
     lineEl.setAttribute('x2', x2); lineEl.setAttribute('y2', y2);
@@ -616,12 +615,10 @@
     lineEl.setAttribute('class', 'win-line-path');
     svg.appendChild(lineEl);
     svg.classList.add('visible');
-
     line.forEach(idx=>{
       cellEls[idx].classList.add('win-cell');
       cellEls[idx].style.setProperty('--glow-color', glow);
     });
-
     requestAnimationFrame(()=>{
       requestAnimationFrame(()=>{
         lineEl.classList.add('drawn');
@@ -645,7 +642,6 @@
     name.textContent = nicknames[currentPlayer];
     void banner.offsetWidth;
     banner.classList.add('flash');
-
     document.getElementById('card-p1').classList.toggle('active', currentPlayer===1);
     document.getElementById('card-p2').classList.toggle('active', currentPlayer===2);
   }
@@ -681,9 +677,8 @@
   }
 
   // ==================================================================
-  // ONLINE CONNESSIONE CON PEERJS
+  // ONLINE CONNESSIONE CON PEERJS (MIGLIORATA)
   // ==================================================================
-
   function connectViaPeer(roomId, isHost) {
     onlineMode = true;
     const nick = document.getElementById('online-nick').value.trim() || (isHost ? 'Giocatore 1' : 'Giocatore 2');
@@ -692,11 +687,11 @@
     updateNicknameUI();
 
     const status = document.getElementById('online-status');
-    status.textContent = isHost ? 'In attesa che l’avversario si connetta…' : 'Connessione in corso…';
+    status.textContent = isHost ? 'Inizializzazione stanza...' : 'Connessione al server in corso...';
     status.className = 'online-status';
 
     peer = new Peer(isHost ? roomId : undefined, {
-      debug: 0
+      debug: 1
     });
 
     if (isHost) {
@@ -707,45 +702,69 @@
         status.className = 'online-status ok';
       });
       peer.on('open', (id) => {
-        status.textContent = `ID stanza: ${id}. In attesa…`;
+        status.textContent = `Stanza pronta: ${id}. In attesa dell'avversario…`;
         status.className = 'online-status';
       });
     } else {
-      const conn = peer.connect(roomId);
-      connection = conn;
-      setupConnection(conn);
-      status.textContent = 'Connessione in corso…';
-      status.className = 'online-status';
+      peer.on('open', () => {
+        status.textContent = 'Ricerca della stanza in corso...';
+        const conn = peer.connect(roomId);
+        connection = conn;
+        setupConnection(conn);
+      });
     }
 
     peer.on('error', (err) => {
-      status.textContent = 'Errore: ' + err.message;
+      if (err.type === 'peer-unavailable') {
+        status.textContent = 'Errore: Stanza non trovata. Controlla il nome.';
+      } else if (err.type === 'network' || err.type === 'server-error') {
+        status.textContent = 'Errore: Server PeerJS irraggiungibile.';
+      } else {
+        status.textContent = 'Errore: ' + err.message;
+      }
       status.className = 'online-status';
       onlineMode = false;
     });
   }
 
   function setupConnection(conn) {
+    let helloReceived = false;
+
     conn.on('open', () => {
       document.getElementById('online-overlay').classList.add('hidden');
       document.getElementById('online-pill').classList.remove('hidden');
       document.getElementById('btn-disconnect').classList.remove('hidden');
       document.getElementById('btn-restart').textContent = 'Azzera punteggio';
-      
+
       scores = {1:0, 2:0};
       updateScoresUI();
-      
+
       const myNick = nicknames[localPlayerNumber];
       conn.send({type:'hello', nickname: myNick});
+
+      if (helloTimeout) clearTimeout(helloTimeout);
+      helloTimeout = setTimeout(() => {
+        if (!helloReceived && !gameActive) {
+          const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
+          nicknames[remotePlayer] = 'Avversario';
+          updateNicknameUI();
+          startNewRound(1);
+        }
+        helloTimeout = null;
+      }, 5000);
     });
 
     conn.on('data', (data) => {
       if (data.type === 'hello') {
+        helloReceived = true;
+        if (helloTimeout) {
+          clearTimeout(helloTimeout);
+          helloTimeout = null;
+        }
         const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
         nicknames[remotePlayer] = data.nickname || 'Avversario';
         updateNicknameUI();
-        
-        // Avvia la partita quando entrambi i player si sono scambiati l'hello
+
         if (!gameActive) {
           startNewRound(1);
         }
@@ -782,6 +801,11 @@
   function handleOnlineDisconnect() {
     onlineMode = false;
     gameActive = false;
+    localPlayerNumber = null;
+    if (helloTimeout) {
+      clearTimeout(helloTimeout);
+      helloTimeout = null;
+    }
     document.getElementById('turn-name').textContent = 'connessione persa';
     document.getElementById('online-pill').classList.add('hidden');
     document.getElementById('btn-disconnect').classList.add('hidden');
@@ -794,6 +818,11 @@
     connection = null;
     onlineMode = false;
     gameActive = false;
+    localPlayerNumber = null;
+    if (helloTimeout) {
+      clearTimeout(helloTimeout);
+      helloTimeout = null;
+    }
     document.getElementById('online-pill').classList.add('hidden');
     document.getElementById('btn-disconnect').classList.add('hidden');
     document.getElementById('btn-restart').textContent = 'Ricomincia tutto';
@@ -802,7 +831,7 @@
   }
 
   // ==================================================================
-  // LOGICA DI GIOCO 
+  // LOGICA DI GIOCO
   // ==================================================================
 
   function onCellClick(index){
@@ -831,7 +860,7 @@
     }
 
     if(cells.every(c => c !== null)){
-      endRound(null, null); // Pareggio
+      endRound(null, null);
       return;
     }
 
@@ -860,7 +889,7 @@
     }
 
     setTimeout(()=>{
-      document.getElementById('btn-next-round').disabled = false; // reset del blocco click
+      document.getElementById('btn-next-round').disabled = false;
       overlay.classList.remove('hidden');
     }, winner !== null ? 550 : 0);
   }
@@ -934,18 +963,17 @@
 
   // ---------------- ROUND FLOW ----------------
   document.getElementById('btn-next-round').addEventListener('click', (e)=>{
-    // Blocco temporaneo per evitare doppi invii accidentali
     const btn = e.target;
     if (btn.disabled) return;
     btn.disabled = true;
 
     document.getElementById('round-overlay').classList.add('hidden');
     const starting = currentPlayer === 1 ? 2 : 1;
-    
+
     if(onlineMode) {
       sendData({type:'next-round', startingPlayer: starting});
     }
-    
+
     if (!gameActive) {
       startNewRound(starting);
     }
