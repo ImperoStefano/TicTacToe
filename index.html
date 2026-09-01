@@ -3,7 +3,83 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>Tris Svanente</title>
+
+<!--
+  All absolute URLs on this page (canonical, og:url, og:image, twitter:image,
+  and the JSON-LD "url"/"image" fields below) point to this repo's live
+  GitHub Pages URL: https://imperostefano.github.io/TicTacToe/
+  If you later move to a custom domain, find-and-replace that URL here
+  (and in robots.txt + sitemap.xml) with the new one, then add the domain
+  in Settings > Pages so GitHub generates the CNAME file for you.
+-->
+
+<title id="page-title">Tris Svanente – gioco del tris con simboli che svaniscono</title>
+<meta id="meta-description" name="description" content="Tris Svanente: il classico tris con una variante. Ogni giocatore può avere al massimo 4 simboli sul tabellone — il più vecchio svanisce a ogni nuova mossa. Gioca in due sullo stesso schermo o online con PeerJS. Gratis, in italiano e inglese.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#b3abbd">
+<meta name="color-scheme" content="light">
+<link rel="canonical" href="https://imperostefano.github.io/TicTacToe/">
+
+<!-- Favicon / app icons -->
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<!-- Open Graph / social share preview -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Tris Svanente">
+<meta property="og:title" content="Tris Svanente – Vanishing Tic-Tac-Toe">
+<meta property="og:description" content="Tre in fila per vincere, ma il tuo simbolo più vecchio svanisce a ogni mossa. Gioca in locale o online con un amico, in italiano o inglese.">
+<meta property="og:url" content="https://imperostefano.github.io/TicTacToe/">
+<meta property="og:image" content="https://imperostefano.github.io/TicTacToe/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Logo di Tris Svanente: un cerchio O arancione e una X lime intrecciati">
+<meta property="og:locale" content="it_IT">
+<meta property="og:locale:alternate" content="en_US">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Tris Svanente – Vanishing Tic-Tac-Toe">
+<meta name="twitter:description" content="Tre in fila per vincere, ma il tuo simbolo più vecchio svanisce a ogni mossa. Gioca in locale o online con un amico.">
+<meta name="twitter:image" content="https://imperostefano.github.io/TicTacToe/og-image.png">
+<meta name="twitter:image:alt" content="Logo di Tris Svanente: un cerchio O arancione e una X lime intrecciati">
+
+<!-- Structured data: this is a free browser game, not a business, so it's
+     marked up as schema.org/VideoGame rather than LocalBusiness. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VideoGame",
+  "name": "Tris Svanente",
+  "alternateName": "Vanishing Tic-Tac-Toe",
+  "description": "A two-player tic-tac-toe variant where each player's oldest symbol vanishes once they place a fifth piece. Play locally on one device or online with a peer-to-peer connection.",
+  "url": "https://imperostefano.github.io/TicTacToe/",
+  "image": "https://imperostefano.github.io/TicTacToe/og-image.png",
+  "genre": "Strategy",
+  "gamePlatform": "Web Browser",
+  "applicationCategory": "GameApplication",
+  "operatingSystem": "Any (modern web browser)",
+  "numberOfPlayers": {
+    "@type": "QuantitativeValue",
+    "minValue": 2,
+    "maxValue": 2
+  },
+  "playMode": "https://schema.org/MultiPlayer",
+  "inLanguage": ["it", "en"],
+  "isAccessibleForFree": true,
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Stefano Kolta"
+  }
+}
+</script>
 
 <!-- Libreria PeerJS per connessioni P2P dirette (WebRTC) -->
 <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
@@ -565,6 +641,8 @@
    * ================================================================ */
   const i18n = {
     it: {
+      pageTitle: "Tris Svanente – gioco del tris con simboli che svaniscono",
+      metaDescription: "Tris Svanente: il classico tris con una variante. Ogni giocatore può avere al massimo 4 simboli sul tabellone — il più vecchio svanisce a ogni nuova mossa. Gioca in due sullo stesso schermo o online con PeerJS. Gratis, in italiano e inglese.",
       eyebrow: "Duello acrilico",
       titlePart1: "TRIS",
       titlePart2: "SVANENTE",
@@ -631,6 +709,8 @@
       ariaLangSwitch: "Lingua"
     },
     en: {
+      pageTitle: "Vanishing Tic-Tac-Toe – three in a row, but your oldest symbol fades",
+      metaDescription: "Vanishing Tic-Tac-Toe: the classic game with a twist. Each player can have at most 4 symbols on the board — the oldest one fades away on your next move. Play two-player local or online via PeerJS. Free, in Italian and English.",
       eyebrow: "Acrylic showdown",
       titlePart1: "VANISHING",
       titlePart2: "TIC-TAC-TOE",
@@ -698,7 +778,17 @@
     }
   };
 
-  let lang = localStorage.getItem('trisSvanenteLang') || 'it';
+  // localStorage can throw (Safari private mode edge cases, sandboxed iframes,
+  // browser settings that block storage) — never let a preference read/write
+  // take the whole page down with an uncaught error.
+  function safeStorageGet(key){
+    try{ return localStorage.getItem(key); }catch(e){ return null; }
+  }
+  function safeStorageSet(key, value){
+    try{ localStorage.setItem(key, value); }catch(e){ /* ignore: non-fatal */ }
+  }
+
+  let lang = safeStorageGet('trisSvanenteLang') || 'it';
   if(!i18n[lang]) lang = 'it';
 
   /** Restituisce la stringa tradotta per `key`, sostituendo eventuali {placeholder}. */
@@ -804,6 +894,8 @@
   /** Ridisegna tutte le parti dinamiche dell'interfaccia nella lingua corrente. */
   function refreshDynamicTexts(){
     applyStaticTranslations();
+    document.getElementById('page-title').textContent = t('pageTitle');
+    document.getElementById('meta-description').setAttribute('content', t('metaDescription'));
     updateNicknameUI();
     updateTurnUI(false);
     updateRestartButtonLabel();
@@ -824,7 +916,7 @@
       // anche se invariata, assicura coerenza aria-pressed al primo giro
     }
     lang = i18n[newLang] ? newLang : lang;
-    localStorage.setItem('trisSvanenteLang', lang);
+    safeStorageSet('trisSvanenteLang', lang);
     refreshDynamicTexts();
   }
 
@@ -1377,6 +1469,10 @@
    * ================================================================ */
   buildBoardDOM();
   applyStaticTranslations();
+  // Keep tab title + meta description correct even when a returning visitor's
+  // saved language preference differs from the page's static IT default.
+  document.getElementById('page-title').textContent = t('pageTitle');
+  document.getElementById('meta-description').setAttribute('content', t('metaDescription'));
   updateNicknameUI();
   updateRestartButtonLabel();
   document.getElementById('lang-it').setAttribute('aria-pressed', String(lang==='it'));

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://imperostefano.github.io/TicTacToe/sitemap.xml

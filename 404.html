@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 – Pagina svanita · Tris Svanente</title>
+<meta name="description" content="La pagina cercata non esiste o è stata spostata. Torna a Tris Svanente per giocare.">
+<meta name="robots" content="noindex, follow">
+<link rel="canonical" href="https://imperostefano.github.io/TicTacToe/404.html">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="alternate icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#b3abbd">
+<style>
+  :root{
+    --bg-1:#cec9d2; --bg-2:#b3abbd;
+    --surface:rgba(255,255,255,0.46);
+    --surface-strong:rgba(255,255,255,0.82);
+    --surface-edge:rgba(255,255,255,0.85);
+    --ink:#332c3a; --ink-soft:#5a5064;
+    --p1-deep:#b8721f; --p2-deep:#758317;
+    --shadow:0 18px 40px -14px rgba(51,44,58,0.35);
+    --radius-lg:22px;
+    --focus-ring:0 0 0 3px rgba(51,44,58,0.85), 0 0 0 6px rgba(255,255,255,0.9);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    font-family:'Segoe UI',system-ui,sans-serif; color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 10%, rgba(255,255,255,0.5), transparent 45%),
+      radial-gradient(circle at 85% 90%, rgba(255,255,255,0.35), transparent 50%),
+      linear-gradient(160deg, var(--bg-1), var(--bg-2));
+    background-attachment:fixed;
+    padding:24px;
+    text-align:center;
+  }
+  a:focus-visible, button:focus-visible{ outline:none; box-shadow:var(--focus-ring); }
+  .panel{
+    background:var(--surface); border:1px solid var(--surface-edge); border-radius:var(--radius-lg);
+    box-shadow:var(--shadow); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    max-width:420px; padding:36px 28px 30px;
+  }
+  .fading-o{ width:96px; height:96px; margin:0 auto 12px; }
+  .fading-o circle{ animation:fade-pulse 2.4s ease-in-out infinite; }
+  @keyframes fade-pulse{
+    0%,100%{opacity:0.9;} 50%{opacity:0.15;}
+  }
+  h1{ margin:6px 0 2px; font-size:26px; font-weight:800; letter-spacing:.02em; text-transform:uppercase; }
+  p.lead{ margin:2px 0 0; color:var(--ink-soft); font-size:15px; }
+  p.lead-en{ margin:4px 0 20px; color:var(--ink-soft); font-size:13px; font-style:italic; }
+  .btn{
+    display:inline-block; font-weight:700; font-size:13px; letter-spacing:.04em;
+    padding:12px 22px; border-radius:20px; border:none; text-decoration:none;
+    background:linear-gradient(120deg, #f0a63c, #a9bf2e); color:#2c2632;
+    box-shadow:0 6px 14px -6px rgba(51,44,58,0.3);
+  }
+  .btn:hover{ filter:brightness(1.05); }
+  .code{ margin-top:18px; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-faint,#7d7387); }
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; animation-iteration-count:1 !important;}
+  }
+</style>
+</head>
+<body>
+  <div class="panel">
+    <svg class="fading-o" viewBox="0 0 40 40" aria-hidden="true">
+      <circle cx="20" cy="20" r="13" fill="none" stroke="#b8721f" stroke-width="7"/>
+    </svg>
+    <h1>Pagina svanita</h1>
+    <p class="lead">Come un simbolo di troppo sul tabellone, questa pagina è svanita. La pagina che cerchi non esiste o è stata spostata.</p>
+    <p class="lead-en">This page has vanished — like an old symbol on the board. The page you're looking for doesn't exist or has moved.</p>
+    <a class="btn" href="index.html">← Torna al gioco · Back to the game</a>
+    <div class="code" aria-hidden="true">Errore 404</div>
+  </div>
+</body>
+</html>

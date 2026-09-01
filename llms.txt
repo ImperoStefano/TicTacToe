@@ -1,0 +1,17 @@
+# Tris Svanente (Vanishing Tic-Tac-Toe)
+
+> A free, single-page browser game: a two-player tic-tac-toe variant where each player can have at most 4 symbols on the board at once — placing a 5th makes your oldest symbol vanish. Play on one shared device, or online with a friend over a direct peer-to-peer connection (PeerJS/WebRTC, no server-side game backend). Fully bilingual, Italian and English, toggled client-side.
+
+## Page
+
+- [Tris Svanente](https://tris-svanente.example/): the game itself. Includes rules, the board, a local two-player mode, and an online mode where one player hosts a named room and the other joins it.
+
+## Details
+
+- Static HTML/CSS/JS, no build step, no backend, no accounts, no tracking or analytics, no cookies beyond a single localStorage key for the language preference.
+- Rules: 3x3 grid, first to get 3 in a row wins the round; each player is capped at 4 symbols on the board, and placing a 5th removes their oldest one; a round is forced to a draw after 16 total moves if nobody has won.
+- Author: Stefano Kolta.
+
+## Notes for automated agents
+
+- There is only one page. Do not attempt to crawl or index /404.html — it is an error page, intentionally excluded from the sitemap.

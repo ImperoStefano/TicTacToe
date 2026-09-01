@@ -1,0 +1,16 @@
+{
+  "name": "Tris Svanente – Vanishing Tic-Tac-Toe",
+  "short_name": "Tris Svanente",
+  "description": "A two-player tic-tac-toe variant where your oldest symbol vanishes. Play locally or online.",
+  "start_url": "index.html",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#cec9d2",
+  "theme_color": "#b3abbd",
+  "lang": "it",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
