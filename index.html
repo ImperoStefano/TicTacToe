@@ -81,8 +81,15 @@
 }
 </script>
 
-<!-- Libreria PeerJS per connessioni P2P dirette (WebRTC) -->
-<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<!-- Libreria PeerJS per connessioni P2P dirette (WebRTC).
+     CDN primaria + fallback: se una delle due è bloccata (adblock, rete aziendale,
+     outage di unpkg) l'altra copre il buco, invece di lasciare `Peer` undefined. -->
+<script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+<script>
+  if(typeof Peer === 'undefined'){
+    document.write('<scr'+'ipt src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"><\/scr'+'ipt>');
+  }
+</script>
 
 <style>
   :root{
@@ -702,6 +709,12 @@
       statusErrorNetwork: "Errore: server PeerJS irraggiungibile.",
       statusErrorGeneric: "Errore: {msg}",
       statusConnectionLost: "connessione persa",
+      statusErrorLib: "Errore: libreria PeerJS non caricata. Ricarica la pagina o disattiva eventuali blocchi (adblock, VPN).",
+      statusErrorIdTaken: "Questa stanza è già occupata. Prova un altro nome, oppure unisciti come ospite.",
+      statusErrorInvalidRoom: "Nome stanza non valido: usa solo lettere e numeri.",
+      statusErrorTimeout: "Collegamento diretto non riuscito: la rete di uno dei due dispositivi lo blocca. Provate un'altra rete (es. hotspot del telefono) oppure configurate un server TURN.",
+      statusRetrying: "Stanza non ancora pronta, nuovo tentativo… ({n}/{max})",
+      statusOpponentLeft: "L'avversario si è disconnesso.",
       ariaBoard: "Tabellone di gioco",
       ariaCellEmpty: "Cella {n}, vuota",
       ariaCellO: "Cella {n}, simbolo O",
@@ -770,6 +783,12 @@
       statusErrorNetwork: "Error: PeerJS server unreachable.",
       statusErrorGeneric: "Error: {msg}",
       statusConnectionLost: "connection lost",
+      statusErrorLib: "Error: PeerJS library not loaded. Reload the page or disable any blockers (adblock, VPN).",
+      statusErrorIdTaken: "This room is already taken. Try another name, or join as a guest.",
+      statusErrorInvalidRoom: "Invalid room name: use letters and numbers only.",
+      statusErrorTimeout: "Direct connection failed: one of the two networks is blocking it. Try another network (e.g. phone hotspot) or configure a TURN server.",
+      statusRetrying: "Room not ready yet, retrying… ({n}/{max})",
+      statusOpponentLeft: "Your opponent disconnected.",
       ariaBoard: "Game board",
       ariaCellEmpty: "Cell {n}, empty",
       ariaCellO: "Cell {n}, symbol O",
@@ -1167,9 +1186,10 @@
       return;
     }
     const canSend = cells[index] === null;
+    const moveNo = totalMoves;
     onCellClick(index);
     if(onlineMode && canSend){
-      sendData({type:'move', index});
+      sendData({type:'move', index, player: localPlayerNumber, moveNo});
     }
   }
 
@@ -1241,9 +1261,77 @@
   /* ================================================================
    *  RETE — CONNESSIONE PEER-TO-PEER (PeerJS)
    * ================================================================ */
-  function connectViaPeer(roomId, isHost){
+  /* Il server pubblico di PeerJS fa solo da "centralino": scambia gli indirizzi,
+     poi i due browser devono parlarsi direttamente via WebRTC. Con molte reti
+     (4G/5G, wifi universitari, firewall aziendali) il collegamento diretto NON è
+     possibile e serve un relay TURN. PeerJS ha chiuso il suo TURN gratuito, quindi
+     senza le righe qui sotto una parte delle partite non parte mai.
+     Per attivarlo: crea un account gratuito (es. metered.ca / Open Relay), copia le
+     credenziali qui dentro e la percentuale di connessioni riuscite sale al ~100%. */
+  const TURN_SERVERS = [
+    // { urls: 'turn:XXXX.metered.live:80',                username: 'LA_TUA_USERNAME', credential: 'LA_TUA_PASSWORD' },
+    // { urls: 'turn:XXXX.metered.live:443',               username: 'LA_TUA_USERNAME', credential: 'LA_TUA_PASSWORD' },
+    // { urls: 'turns:XXXX.metered.live:443?transport=tcp', username: 'LA_TUA_USERNAME', credential: 'LA_TUA_PASSWORD' }
+  ];
+
+  const STUN_SERVERS = [
+    { urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] },
+    { urls: 'stun:stun.cloudflare.com:3478' }
+  ];
+
+  function peerOptions(){
+    return {
+      debug: 1,
+      config: {
+        iceServers: STUN_SERVERS.concat(TURN_SERVERS),
+        iceCandidatePoolSize: 4
+      }
+    };
+  }
+
+  // Gli ID su 0.peerjs.com sono globali e condivisi con tutte le app del mondo:
+  // "tris123" può già essere occupato da qualcun altro. Un prefisso dedicato evita
+  // le collisioni; la normalizzazione evita ID non validi (spazi, accenti, maiuscole).
+  const ROOM_PREFIX = 'tris-svanente-';
+  const JOIN_RETRIES = 4;
+  const HANDSHAKE_TIMEOUT = 20000;
+
+  function normalizeRoom(raw){
+    return String(raw || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  let joinAttempt = 0;
+  let handshakeTimeout = null;
+  let currentRoomId = null;
+  let isHostPeer = false;
+
+  function clearHandshakeTimeout(){
+    if(handshakeTimeout){ clearTimeout(handshakeTimeout); handshakeTimeout = null; }
+  }
+
+  function connectViaPeer(roomName, isHost){
+    if(typeof Peer === 'undefined'){
+      renderStatus('statusErrorLib', null, 'err');
+      return;
+    }
+    const roomId = ROOM_PREFIX + normalizeRoom(roomName);
+    if(roomId === ROOM_PREFIX){
+      renderStatus('statusErrorInvalidRoom', null, 'err');
+      return;
+    }
+
+    // Un peer precedente (es. hai premuto "Crea" e poi "Unisciti") va chiuso,
+    // altrimenti restano due socket aperti e i messaggi vanno sul peer sbagliato.
+    if(peer){ peer.destroy(); peer = null; }
+    connection = null;
+    clearHandshakeTimeout();
+
     onlineMode = true;
     connectionEstablished = false;
+    currentRoomId = roomId;
+    isHostPeer = isHost;
+    joinAttempt = 0;
+
     const nickInput = document.getElementById('online-nick').value.trim();
     localPlayerNumber = isHost ? 1 : 2;
     if(nickInput){
@@ -1255,50 +1343,89 @@
 
     renderStatus(isHost ? 'statusInitRoom' : 'statusConnectingServer', null, '');
 
-    peer = new Peer(isHost ? roomId : undefined, { debug: 1 });
+    peer = new Peer(isHost ? roomId : undefined, peerOptions());
 
     if(isHost){
       peer.on('connection', (conn)=>{
+        // Se l'avversario si riconnette, la vecchia connessione va chiusa.
+        if(connection && connection !== conn){ try{ connection.close(); }catch(e){} }
         connection = conn;
         setupConnection(conn);
       });
       peer.on('open', (id)=>{
-        renderStatus('statusRoomReady', {id}, '');
+        renderStatus('statusRoomReady', {id: roomName}, '');
       });
     } else {
       peer.on('open', ()=>{
         renderStatus('statusSearchingRoom', null, '');
-        const conn = peer.connect(roomId);
-        connection = conn;
-        setupConnection(conn);
+        attemptJoin();
       });
     }
+
+    peer.on('disconnected', ()=>{
+      // Socket verso il centralino caduto: si riconnette da solo, la partita in corso
+      // non ne risente (i dati viaggiano peer-to-peer).
+      if(peer && !peer.destroyed){ try{ peer.reconnect(); }catch(e){} }
+    });
 
     peer.on('error', (err)=>{
       // Dopo l'handshake iniziale non interrompiamo una partita già avviata per un
       // errore tardivo del peer: solo la disconnessione esplicita gestisce quel caso.
       if(connectionEstablished) return;
       if(err.type === 'peer-unavailable'){
+        // L'host potrebbe non aver ancora finito di aprire la stanza: riprova.
+        if(!isHostPeer && joinAttempt < JOIN_RETRIES){
+          renderStatus('statusRetrying', {n: joinAttempt, max: JOIN_RETRIES}, '');
+          setTimeout(attemptJoin, 2000);
+          return;
+        }
         renderStatus('statusErrorRoomNotFound', null, 'err');
-      } else if(err.type === 'network' || err.type === 'server-error'){
+      } else if(err.type === 'unavailable-id'){
+        renderStatus('statusErrorIdTaken', null, 'err');
+      } else if(err.type === 'invalid-id' || err.type === 'invalid-key'){
+        renderStatus('statusErrorInvalidRoom', null, 'err');
+      } else if(err.type === 'network' || err.type === 'server-error' || err.type === 'socket-error'){
         renderStatus('statusErrorNetwork', null, 'err');
       } else {
         renderStatus('statusErrorGeneric', {msg: err.message}, 'err');
       }
+      clearHandshakeTimeout();
       onlineMode = false;
     });
+  }
+
+  function attemptJoin(){
+    if(!peer || peer.destroyed || connectionEstablished) return;
+    joinAttempt++;
+    const conn = peer.connect(currentRoomId, { reliable: true });
+    connection = conn;
+    setupConnection(conn);
   }
 
   function setupConnection(conn){
     let helloReceived = false;
 
+    // Se `open` non arriva mai, WebRTC non è riuscito ad attraversare le due reti:
+    // senza questo timeout la schermata resta bloccata su "Ricerca della stanza…".
+    clearHandshakeTimeout();
+    handshakeTimeout = setTimeout(()=>{
+      if(!connectionEstablished){
+        renderStatus('statusErrorTimeout', null, 'err');
+        onlineMode = false;
+        if(peer){ peer.destroy(); peer = null; }
+        connection = null;
+      }
+    }, HANDSHAKE_TIMEOUT);
+
     conn.on('open', ()=>{
       connectionEstablished = true;
+      clearHandshakeTimeout();
       hideOverlay(el.onlineOverlay);
       el.onlinePill.classList.remove('hidden');
       el.btnDisconnect.classList.remove('hidden');
       updateRestartButtonLabel();
       clearStatus();
+      disconnectedNotice = false;
 
       scores = {1:0, 2:0};
       updateScoresUI();
@@ -1318,6 +1445,8 @@
     });
 
     conn.on('data', (data)=>{
+      if(!data || typeof data !== 'object') return;
+
       if(data.type === 'hello'){
         helloReceived = true;
         if(helloTimeout){ clearTimeout(helloTimeout); helloTimeout = null; }
@@ -1327,9 +1456,36 @@
         if(!gameActive) startNewRound(1);
         return;
       }
-      if(data.type === 'move' && onlineMode && gameActive){
-        onCellClick(data.index);
-      } else if(data.type === 'next-round'){
+
+      if(data.type === 'move'){
+        const remotePlayer = localPlayerNumber === 1 ? 2 : 1;
+        // Una mossa valida deve arrivare dall'avversario, al suo turno, con lo stesso
+        // numero di mosse già giocate: altrimenti le due griglie sono divergenti.
+        const inSync = gameActive
+          && data.player === remotePlayer
+          && data.player === currentPlayer
+          && data.moveNo === totalMoves
+          && cells[data.index] === null;
+        if(inSync){
+          onCellClick(data.index);
+        } else {
+          requestResync();
+        }
+        return;
+      }
+
+      if(data.type === 'resync'){
+        // L'host è l'arbitro: rimanda lo stato completo.
+        if(localPlayerNumber === 1) sendData(serializeState());
+        return;
+      }
+
+      if(data.type === 'state'){
+        if(localPlayerNumber !== 1) applyState(data);
+        return;
+      }
+
+      if(data.type === 'next-round'){
         hideOverlay(el.roundOverlay);
         if(!gameActive) startNewRound(data.startingPlayer);
       } else if(data.type === 'restart'){
@@ -1340,7 +1496,50 @@
       }
     });
 
+    conn.on('error', ()=>{
+      if(!connectionEstablished){
+        clearHandshakeTimeout();
+        renderStatus('statusErrorTimeout', null, 'err');
+        onlineMode = false;
+      }
+    });
+
     conn.on('close', handleOnlineDisconnect);
+  }
+
+  /* ---- Sincronizzazione di stato (l'host fa da arbitro) ---- */
+  function serializeState(){
+    return {
+      type: 'state',
+      cells: cells.slice(),
+      queues: { 1: queues[1].slice(), 2: queues[2].slice() },
+      scores: { 1: scores[1], 2: scores[2] },
+      currentPlayer: currentPlayer,
+      totalMoves: totalMoves,
+      gameActive: gameActive
+    };
+  }
+
+  function applyState(s){
+    if(!s || !Array.isArray(s.cells) || s.cells.length !== 9) return;
+    cells = s.cells.slice();
+    queues = { 1: (s.queues && s.queues[1] || []).slice(), 2: (s.queues && s.queues[2] || []).slice() };
+    scores = { 1: (s.scores && s.scores[1]) || 0, 2: (s.scores && s.scores[2]) || 0 };
+    currentPlayer = s.currentPlayer === 2 ? 2 : 1;
+    totalMoves = s.totalMoves || 0;
+    gameActive = !!s.gameActive;
+    if(gameActive) hideOverlay(el.roundOverlay);
+    updateScoresUI();
+    updateTurnUI(false);
+    render();
+  }
+
+  function requestResync(){
+    if(localPlayerNumber === 1){
+      sendData(serializeState());
+    } else {
+      sendData({type:'resync'});
+    }
   }
 
   function sendData(obj){
@@ -1353,6 +1552,7 @@
     connectionEstablished = false;
     localPlayerNumber = null;
     if(helloTimeout){ clearTimeout(helloTimeout); helloTimeout = null; }
+    clearHandshakeTimeout();
     disconnectedNotice = true;
     el.turnName.textContent = t('statusConnectionLost');
     el.onlinePill.classList.add('hidden');
@@ -1371,6 +1571,7 @@
     localPlayerNumber = null;
     disconnectedNotice = false;
     if(helloTimeout){ clearTimeout(helloTimeout); helloTimeout = null; }
+    clearHandshakeTimeout();
     el.onlinePill.classList.add('hidden');
     el.btnDisconnect.classList.add('hidden');
     updateRestartButtonLabel();
@@ -1467,6 +1668,10 @@
   /* ================================================================
    *  INIZIALIZZAZIONE
    * ================================================================ */
+  // Chiudendo la scheda senza distruggere il peer, il centralino tiene l'ID della
+  // stanza occupato ancora per un po': ricreare "tris123" subito dopo fallirebbe.
+  window.addEventListener('pagehide', ()=>{ if(peer){ try{ peer.destroy(); }catch(e){} } });
+
   buildBoardDOM();
   applyStaticTranslations();
   // Keep tab title + meta description correct even when a returning visitor's
